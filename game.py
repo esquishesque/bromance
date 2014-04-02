@@ -7,10 +7,46 @@ class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self):
         self.robotList = []
-        self.robot = Robot() #dummy robot to populate the list
+        self.robot = Robot() # TODO dummy robot to populate the list, get real robots!
         #later the list will be populated by something else but for now it's just a single robot
         self.robotList.append(self.robot) #the order of this list should never change (deprecated fact?)
         self.board = Board(self.robotList)
+        print(self.board)
+
+
+    def play(self):
+        self.executePhase()
+
+    def executeTurn(self):
+        pass
+
+    def executePhase(self):
+        self.handleCards()
+
+        #boardMoves()
+        #lasersFire()
+        #touchSquare()
+
+    def handleCards(self):
+        tempCard = MoveCard() # TODO get real cards
+        tempRobot = self.board.robotList[0] # TODO talk to robots to get cards
+
+        # TODO block that loops through by priority (use LPQ?)
+
+        #execute card
+        if isinstance(tempCard, MoveCard):
+            self.board.robotMove(tempRobot, tempCard.getNumSteps())
+        elif isinstance(tempCard, TurnCard):
+            self.board.robotTurn(tempRobot, tempCard.getNumSteps())
+        else:
+            # TODO should throw exception
+            print('trying to execute card of invalid type')
+
+
+    def deal(self):
+        pass
+    
+    
         
 class Robot:
     """Names the Robot"""
@@ -50,7 +86,7 @@ class Robot:
             return "v"
         elif self.getOrient() == 3:
             return "<"
-        else:                           #TODO should throw exception
+        else:                           # TODO should throw exception
             print ("Unexpected value in robot.__str__")
         
 class Board:
@@ -65,7 +101,7 @@ class Board:
         self.robotList = robotList
         
         #populate list of flag locations; crucially this is [x,y] NOT [row,col]
-        tempFlagPoint = Location(9,9) #TODO generate these better with a function later
+        tempFlagPoint = Location(9,9) # TODO generate these better with a function later
         self.flagLocList.append(tempFlagPoint)        
         
         # fill a grid representing a 10x10 board with Squares
@@ -89,19 +125,19 @@ class Board:
         robot.setOrient(i)
         print(self)
 
-    def robotTurn(self,robot,numSpaces):
-        self.updateRoOrient(robot,robot.getOrient() + numSpaces)
+    def robotTurn(self,robot,numSteps):
+        self.updateRoOrient(robot,robot.getOrient() + numSteps)
 
-    def robotMove(self,robot,numSpaces):
+    def robotMove(self,robot,numSteps):
         if robot.getOrient() == 0: # facing north, subtract from y
-            self.updateRoLoc(robot,robot.getLoc().x,robot.getLoc().y-numSpaces)
+            self.updateRoLoc(robot,robot.getLoc().x,robot.getLoc().y-numSteps)
         elif robot.getOrient() == 1: # facing east, add to x
-            self.updateRoLoc(robot,robot.getLoc().x+numSpaces,robot.getLoc().y)
+            self.updateRoLoc(robot,robot.getLoc().x+numSteps,robot.getLoc().y)
         elif robot.getOrient() == 2: # facing south, add to y
-            self.updateRoLoc(robot,robot.getLoc().x,robot.getLoc().y+numSpaces)
+            self.updateRoLoc(robot,robot.getLoc().x,robot.getLoc().y+numSteps)
         elif robot.getOrient() == 3: # facing west, subtract x
-            self.updateRoLoc(robot,robot.getLoc().x-numSpaces,robot.getLoc().y)
-        else:                               #TODO should throw exception
+            self.updateRoLoc(robot,robot.getLoc().x-numSteps,robot.getLoc().y)
+        else:                               # TODO should throw exception
             print("Unexpected value in robotMove")
 
     def __str__(self):
@@ -134,3 +170,22 @@ class Spawn(Square):
     def __init__(self):
         self.appearance = "S"
 
+
+class Card():
+    def __init__(self):
+        self.priority = 600 # TODO make deck
+        self.numSteps = 1 # TODO make deck
+
+    def getNumSteps(self):
+        return self.numSteps
+        
+        
+class TurnCard(Card):
+    #def __init__(self):
+    pass
+
+
+
+class MoveCard(Card):
+    #def __init__(self):
+    pass
