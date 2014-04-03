@@ -6,18 +6,23 @@ Location = namedtuple('Location', ['x','y'])
 class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self):
-        self.robotList = []
-        self.robot = Robot() # TODO dummy robot to populate the list, get real robots!
+        robotList = []
+        robot = Robot() # TODO dummy robot to populate the list, get real robots!
         #later the list will be populated by something else but for now it's just a single robot
-        self.robotList.append(self.robot) #the order of this list should never change (deprecated fact?)
-        self.board = Board(self.robotList)
+        robotList.append(robot) #the order of this list should never change (deprecated fact?)
+        self.board = Board(robotList)
         print(self.board)
-
 
     def play(self):
         self.executePhase()
 
     def executeTurn(self):
+
+        # for 5:
+        # self.executePhase()
+        #
+        # self.cleanUp()
+
         pass
 
     def executePhase(self):
@@ -42,10 +47,14 @@ class Game:
             # TODO should throw exception
             print('trying to execute card of invalid type')
 
+    def touchSquare(self):
+        for robot in self.board.robotList:
+            #self.board.grid[self.board.robotList[0].getLoc().x][self.board.robotList[0].getLoc().y][0]
+            pass
 
     def deal(self):
         pass
-    
+
     
         
 class Robot:
@@ -56,6 +65,7 @@ class Robot:
         self.spawnLoc = Location(0,0) #TODO have this assigned somehow during initialization (randomize, or something)
         self.loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
         self.orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
+        self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
 
     def getLoc(self):
         return self.loc
@@ -88,7 +98,8 @@ class Robot:
             return "<"
         else:                           # TODO should throw exception
             print ("Unexpected value in robot.__str__")
-        
+
+
 class Board:
     def __init__(self, robotList):
         """Creates a grid, and fills it with squares"""
@@ -111,11 +122,10 @@ class Board:
             self.grid.append([])
             for x in range(numCols):
                 self.grid[y].append([Square()])
-                if (x,y) in self.flagLocList:
-                    self.grid[y][x].append(Flag())
-                for robot in self.robotList:
-                    if (x,y) == robot.getSpawnLoc():
-                        self.grid[y][x].append(Spawn())
+
+        self.grid[tempFlagPoint.y][tempFlagPoint.x][0].addProperty(Flag())
+        for robot in self.robotList:
+            self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
 
     def updateRoLoc(self,robot,x,y):
         robot.setLoc(x,y)
@@ -153,20 +163,35 @@ class Board:
                 output = output + '|'
             output = output + "\n"
         return output
-    
+
+
 class Square():
     """Creates an appearance for the square"""
     def __init__(self):
         self.appearance = '.'
-        
+        self.propertyList = []
+
+    def addProperty(self,property):
+        self.propertyList.append(property)
+
     def __str__(self):
-        return self.appearance
-    
-class Flag(Square):
+        output = self.appearance
+        for property in self.propertyList:
+            output = output + property.appearance
+        return output
+
+
+class SquareProperty():
+    def __init__(self):
+        pass
+
+
+class Flag(SquareProperty):
     def __init__(self):
         self.appearance = "F"
 
-class Spawn(Square):    
+
+class Spawn(SquareProperty):
     def __init__(self):
         self.appearance = "S"
 
