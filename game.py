@@ -3,6 +3,17 @@ from collections import namedtuple
 Location = namedtuple('Location', ['x','y'])
 
 
+    # def getOrient(self):
+    #     return self._orient
+    #
+    # # %4 is mod4, so that the robot's orientation is always between 0-3
+    # def setOrient(self,i):
+    #     self._orient = i%4
+    #
+    # # every time we set orient, it will go through the function setOrient() instead
+    # orient = property(getOrient,setOrient)
+
+
 class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self):
@@ -49,10 +60,16 @@ class Game:
 
     def touchSquare(self):
         for robot in self.board.robotList:
-            if (self.board.grid[robot.loc.y][robot.loc.x][0].hasProperty(Spawn)):
-                print("I'm touched :)")
+            if (self.board.grid[robot.loc.y][robot.loc.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
+                print('Old spawn is {},{}.'.format(robot.spawnLoc.x, robot.spawnLoc.y))
+                robot.spawnLoc = Location(robot.loc.x,robot.loc.y)
+                print('New spawn is {},{}.'.format(robot.spawnLoc.x,robot.spawnLoc.y))
+                if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc:
+                    robot.checkpoint = robot.checkpoint+1
+                    if robot.checkpoint == len(self.board.flagLocList):
+                        print("You are Winner! Hahaha")             # TODO make an endGame() function
             else:
-                print("Didn't clear a ball")
+                print("Didn't clear a ball!!1")
 
             pass
 
@@ -107,8 +124,10 @@ class Board:
         self.robotList = robotList
         
         #populate list of flag locations; crucially this is [x,y] NOT [row,col]
-        tempFlagPoint = Location(9,9) # TODO generate these better with a function later
-        self.flagLocList.append(tempFlagPoint)        
+        tempFlagPoint = Location(5,9) # TODO generate these better with a function later
+        self.flagLocList.append(tempFlagPoint)
+        tempFlagPointTwo = Location(9,9)
+        self.flagLocList.append(tempFlagPointTwo)
         
         # fill a grid representing a 10x10 board with Squares
         numRows = 10
@@ -118,7 +137,9 @@ class Board:
             for x in range(numCols):
                 self.grid[y].append([Square()])
 
-        self.grid[tempFlagPoint.y][tempFlagPoint.x][0].addProperty(Flag())
+        for flag in self.flagLocList:
+            self.grid[flag.y][flag.x][0].addProperty(Flag())
+
         for robot in self.robotList:
             self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
 
