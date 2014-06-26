@@ -17,46 +17,50 @@ Location = namedtuple('Location', ['x','y'])
 class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self):
-        robotList = []
+        createdRobots = []
         robot = Robot() # TODO dummy robot to populate the list, get real robots!
         #later the list will be populated by something else but for now it's just a single robot
-        robotList.append(robot) #the order of this list should never change (deprecated fact?)
-        self.board = Board(robotList)
+        createdRobots.append(robot) #the order of this list should never change (deprecated fact?)
+        self.numPhases = 5 # number of instruction positions (register phases)
+        self.board = Board(createdRobots)
         print(self.board)
 
     def play(self):
-        self.executePhase()
+        self.executeTurn()
+        # self.executePhase()
 
     def executeTurn(self):
-
-        # for 5:
-        # self.executePhase()
-        #
+        for phase in range(0,self.numPhases):
+            self.executePhase(phase)
         # self.cleanUp()
 
-        pass
 
-    def executePhase(self):
-        self.handleCards()
+    def executePhase(self,phase):
+        # grab one phase at a time and pass them to handleCards
+
+        self.handleCards(phase)
 
         #boardMoves()
         #lasersFire()
         #touchSquare()
 
-    def handleCards(self):
-        tempCard = MoveCard() # TODO get real cards
-        tempRobot = self.board.robotList[0] # TODO talk to robots to get cards
+    def handleCards(self,phase):
+        pass
 
-        # TODO block that loops through by priority (use LPQ?)
+        # tempCard = MoveCard(1) # TODO get real cards
+        # tempRobot = self.board.robotList[0] # TODO talk to robots to get cards
+        #
+        # # TODO block that loops through by priority (use LPQ?)
+        #
+        # #execute card
+        # if isinstance(tempCard, MoveCard):
+        #     self.board.robotMove(tempRobot, tempCard.numSteps)
+        # elif isinstance(tempCard, TurnCard):
+        #     self.board.robotTurn(tempRobot, tempCard.numSteps)
+        # else:
+        #     # TODO should throw exception
+        #     print('trying to execute card of invalid type')
 
-        #execute card
-        if isinstance(tempCard, MoveCard):
-            self.board.robotMove(tempRobot, tempCard.numSteps)
-        elif isinstance(tempCard, TurnCard):
-            self.board.robotTurn(tempRobot, tempCard.numSteps)
-        else:
-            # TODO should throw exception
-            print('trying to execute card of invalid type')
 
     def touchSquare(self):
         for robot in self.board.robotList:
@@ -76,8 +80,8 @@ class Game:
     def deal(self):
         pass
 
-    
-        
+
+
 class Robot:
     """Names the Robot"""
     def __init__(self):
@@ -87,6 +91,9 @@ class Robot:
         self.loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
         self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
+        # These are five dummy cards; later they'll get put in elsewise
+        #self.instructions = [None, None, None, None, None]
+        self.instructions = [MoveCard(1),TurnCard(3),MoveCard(2),TurnCard(1),MoveCard(4)]
 
     def getOrient(self):
         return self._orient
@@ -122,13 +129,13 @@ class Board:
         self.flagLocList = []
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
-        
+
         #populate list of flag locations; crucially this is [x,y] NOT [row,col]
         tempFlagPoint = Location(5,9) # TODO generate these better with a function later
         self.flagLocList.append(tempFlagPoint)
         tempFlagPointTwo = Location(9,9)
         self.flagLocList.append(tempFlagPointTwo)
-        
+
         # fill a grid representing a 10x10 board with Squares
         numRows = 10
         numCols = 10
@@ -222,16 +229,21 @@ class Spawn(SquareProperty):
 
 
 class Card():
-    def __init__(self):
+    def __init__(self,numSteps):
         self.priority = 600 # TODO make deck
-        self.numSteps = 1 # TODO make deck
+        self.numSteps = numSteps # TODO make deck
+
+    def executeCard(self,board,robot):
+        print("This should never happen!")
 
 
 class TurnCard(Card):
     #def __init__(self):
-    pass
+    def executeCard(self,board,robot):
+        board.robotTurn(robot,self.numSteps)
 
 
 class MoveCard(Card):
     #def __init__(self):
-    pass
+    def executeCard(self,board,robot):
+        board.robotMove(robot,self.numSteps)
