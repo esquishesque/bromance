@@ -30,8 +30,15 @@ class Game:
         # self.executePhase()
 
     def executeTurn(self):
+
+        #?.deal()
+
+        for robot in self.board.robotList:
+            robot.selectInstructions()
+
         for phase in range(0,self.numPhases):
             self.executePhase(phase)
+
         # self.cleanUp()
 
 
@@ -39,17 +46,16 @@ class Game:
         # grab one phase at a time and pass them to handleCards
 
         self.handleCards(phase)
-
         #boardMoves()
         #lasersFire()
-        #touchSquare()
+        self.touchSquare()
 
     def handleCards(self,phase):
-        pass
 
-        # tempCard = MoveCard(1) # TODO get real cards
-        # tempRobot = self.board.robotList[0] # TODO talk to robots to get cards
-        #
+        for robot in self.board.robotList:
+            robot.instructions[phase].executeCard(self.board,robot)
+
+
         # # TODO block that loops through by priority (use LPQ?)
         #
         # #execute card
@@ -92,8 +98,23 @@ class Robot:
         self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
         # These are five dummy cards; later they'll get put in elsewise
-        #self.instructions = [None, None, None, None, None]
-        self.instructions = [MoveCard(1),TurnCard(3),MoveCard(2),TurnCard(1),MoveCard(4)]
+        self.instructions = [None, None, None, None, None]
+        self.hand = [TurnCard(3),MoveCard(5),TurnCard(2),MoveCard(-4),MoveCard(1),TurnCard(3),MoveCard(2),MoveCard(1),TurnCard(3),MoveCard(2)]
+
+
+    def selectInstructions(self):
+        instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
+        while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list
+            for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
+                print('{}: {}'.format(cardIndex,self.hand[cardIndex]))
+
+            choice = int(input("pick a card, any card!"))
+            if 0<=choice<len(self.hand): #this checks whether the user input is in the valid range #TODO should also guarantee that input is a valid int
+                self.instructions[instructionsAdded]=self.hand.pop(choice)
+                instructionsAdded=instructionsAdded+1
+            else:
+                print("not a valid choice ><")
+
 
     def getOrient(self):
         return self._orient
@@ -117,6 +138,7 @@ class Robot:
             return "<"
         else:                           # TODO should throw exception
             print ("Unexpected value in robot.__str__")
+
 
 
 class Board:
@@ -236,14 +258,23 @@ class Card():
     def executeCard(self,board,robot):
         print("This should never happen!")
 
+    #def __str__(self):
+    #    print()
+
 
 class TurnCard(Card):
     #def __init__(self):
     def executeCard(self,board,robot):
         board.robotTurn(robot,self.numSteps)
 
+    def __str__(self):
+        return "turn {}; priority: {}".format(self.numSteps, self.priority)
+
 
 class MoveCard(Card):
     #def __init__(self):
     def executeCard(self,board,robot):
         board.robotMove(robot,self.numSteps)
+
+    def __str__(self):
+        return "move {}; priority: {}".format(self.numSteps, self.priority)
