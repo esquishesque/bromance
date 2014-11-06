@@ -1,4 +1,6 @@
 from collections import namedtuple
+import csv
+import random
 
 Location = namedtuple('Location', ['x','y'])
 
@@ -24,6 +26,7 @@ class Game:
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
         print(self.board)
+        self.deck = Deck()
 
     def play(self):
         self.executeTurn()
@@ -99,7 +102,7 @@ class Robot:
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
         # These are five dummy cards; later they'll get put in elsewise
         self.instructions = [None, None, None, None, None]
-        self.hand = [TurnCard(3),MoveCard(5),TurnCard(2),MoveCard(-4),MoveCard(1),TurnCard(3),MoveCard(2),MoveCard(1),TurnCard(3),MoveCard(2)]
+        self.hand = [TurnCard(3,600),MoveCard(5,600),TurnCard(2,600),MoveCard(-4,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600)]
 
 
     def selectInstructions(self):
@@ -138,7 +141,6 @@ class Robot:
             return "<"
         else:                           # TODO should throw exception
             print ("Unexpected value in robot.__str__")
-
 
 
 class Board:
@@ -251,8 +253,8 @@ class Spawn(SquareProperty):
 
 
 class Card():
-    def __init__(self,numSteps):
-        self.priority = 600 # TODO make deck
+    def __init__(self,numSteps,priority):
+        self.priority = priority # TODO make deck
         self.numSteps = numSteps # TODO make deck
 
     def executeCard(self,board,robot):
@@ -278,3 +280,38 @@ class MoveCard(Card):
 
     def __str__(self):
         return "move {}; priority: {}".format(self.numSteps, self.priority)
+
+
+class Deck():
+    def __init__(self):
+        self.drawPile = []
+        self.discardPile = []
+        with open('deck.csv', newline='') as csvfile:
+            cardreader = csv.reader(csvfile, delimiter=',')
+            for row in cardreader:
+                if row[0] == 'turn':
+                    self.drawPile.append(TurnCard(row[1],row[2]))
+                elif row[0] == 'move':
+                    self.drawPile.append(MoveCard(row[1],row[2]))
+                else:
+                    print("error: found invalid card type in deck file!")
+        random.shuffle(self.drawPile)
+
+    def draw(self):
+        """returns a single card from the draw pile, and reshuffles discardPile into drawPile if necessary"""
+        if len(self.drawPile)<=0: #if the draw pile is empty...
+            if len(self.discardPile)<=0: #(except if the discard pile is also empty then be sad) #TODO this should throw a real exception
+                print("nooooooo draw pile and discard pile are both empty :(")
+            for i in range(0,len(self.discardPile)): #loop through the cards in the discard pile
+                self.drawPile.append(self.discardPile.pop()) # and move them to the draw pile
+            random.shuffle(self.drawPile) #then shuffle
+        return self.drawPile.pop()
+
+    def discard(self,card):
+        self.discardPile.append(card)
+
+    def __str__(self):
+        output = ''
+        for card in self.contents:
+            output = output+str(card)+'\n'
+        return output
