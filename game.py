@@ -30,6 +30,7 @@ class Game:
         self.handSize = 9 # TODO take this from settable user input
         self.gameOverManGameOver = False
 
+
     def play(self):
         while(self.gameOverManGameOver==False):
             self.executeTurn()
@@ -38,11 +39,13 @@ class Game:
 
         self.dealHands()
 
-        for robot in self.board.robotList:
+        for robot in self.board.turnedOnRobots:
             robot.selectInstructions()
 
         for phase in range(0,self.numPhases):
             self.executePhase(phase)
+
+
 
         self.cleanUp()
 
@@ -50,7 +53,7 @@ class Game:
     def dealHands(self):
     # for each card that should be dealt, give one card to each robot, if they need one
         for i in range(0,self.handSize):
-            for robot in self.board.robotList:
+            for robot in self.board.turnedOnRobots:
                 # TODO check if they need a card, based on damage; use global variable "handSize"
                     if robot.damage + len(robot.hand) < self.handSize:
                         robot.hand.append(self.deck.draw()) # pop a card from the deck and pass it to each robot's hand
@@ -66,9 +69,10 @@ class Game:
 
     def cleanUp(self):
     # take all cards back from hands and instruction sets and put them in the discard pile
-        for robot in self.board.robotList:
+        for robot in self.board.robotList: #discard all cards that were dealt but haven't been assigned to register phases
             for i in range(0,len(robot.hand)):
                 self.deck.discard(robot.hand.pop())
+        for robot in self.board.turnedOnRobots: #discard all cards that aren't locked into a register phase
             # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
             freeSlots = self.handSize - robot.damage
             # this if makes sure that you never clean up more than five instructions (so, 5 or number of free slots, whichever is less)
@@ -80,7 +84,7 @@ class Game:
 
     def handleCards(self,phase):
 
-        for robot in self.board.robotList:
+        for robot in list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)):
             robot.instructions[phase].executeCard(self.board,robot)
 
         # # TODO block that loops through by priority (use LPQ?)
@@ -96,15 +100,20 @@ class Game:
 
 
     def touchSquare(self):
-        for robot in self.board.robotList:
+        for robot in self.board.functionalRobots:
             if (self.board.grid[robot.loc.y][robot.loc.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
                 print('Old spawn is {},{}.'.format(robot.spawnLoc.x, robot.spawnLoc.y))
-                robot.spawnLoc = Location(robot.loc.x,robot.loc.y)
+                robot.spawnLoc = Location(robot.loc.x,robot.loc.y) #if you're at a flag, change your spawn to be the square you're on
                 print('New spawn is {},{}.'.format(robot.spawnLoc.x,robot.spawnLoc.y))
-                if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc:
-                    robot.checkpoint = robot.checkpoint+1
-                    if robot.checkpoint == len(self.board.flagLocList):
-                        print("You are Winner! Hahaha")             # TODO make an endGame() function
+                print('line104, checkpoint = ' + str(robot.checkpoint)) #TODO delete this is just for debuggint!
+                if robot.checkpoint < len(self.board.flagLocList): #prevents a robot that has won from index erroring the flagLocList
+                    if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc: #if the nth flag is where you are (n = checkpoint), increase your checkpoint
+                        robot.checkpoint = robot.checkpoint+1
+                        print('line107, checkpoint = ' + str(robot.checkpoint)) #TODO delete this is just for debuggint!
+                        if robot.checkpoint == len(self.board.flagLocList):
+                            print("You are Winner! Hahaha")             # TODO make an endGame() function
+                else:
+                    print("Robot has already won; probably needs to be removed from board!")
             else:
                 print("Didn't clear a ball!!1")
 
@@ -130,6 +139,8 @@ class Robot:
         #self.hand = [TurnCard(3,600),MoveCard(5,600),TurnCard(2,600),MoveCard(-4,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600)]
         self.hand = []
         self.damage = 0
+        self.dead = False
+        self.turnedOff = False
 
     def selectInstructions(self):
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
@@ -179,11 +190,14 @@ class Board:
         self.flagLocList = []
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
+        self._livingRobots = []
+        self._turnedOnRobots = []
+        self._functionalRobots = []
 
         #populate list of flag locations; crucially this is [x,y] NOT [row,col]
-        tempFlagPoint = Location(5,9) # TODO generate these better with a function later
+        tempFlagPoint = Location(0,2) # TODO generate these better with a function later
         self.flagLocList.append(tempFlagPoint)
-        tempFlagPointTwo = Location(9,9)
+        tempFlagPointTwo = Location(0,4)
         self.flagLocList.append(tempFlagPointTwo)
 
         # fill a grid representing a 10x10 board with Squares
@@ -199,6 +213,36 @@ class Board:
 
         for robot in self.robotList:
             self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
+
+    def getLivingRobots(self): # return only robots that are not dead (i.e., alive)
+        self._livingRobots = []
+        for robot in self.robotList:
+            if robot.dead == False:
+                self._livingRobots.append(robot)
+        return self._livingRobots
+
+    # every time we get living robots, it will go through the function getLivingRobots() instead
+    livingRobots = property(getLivingRobots)
+
+    def getTurnedOnRobots(self):
+        self._turnedOnRobots = [] #empty the list of turned on robots
+        for robot in self.robotList:
+            if robot.turnedOff == False:
+                self._turnedOnRobots.append(robot)
+        return self._turnedOnRobots
+
+    # every time we get robots that are turned on, it will go through the function getTurnedOnRobots() instead
+    turnedOnRobots = property(getTurnedOnRobots)
+
+    def getFunctionalRobots(self):
+        self._functionalRobots = []
+        for robot in self.robotList:
+            if robot.turnedOff == False and robot.dead == False:
+                self._functionalRobots.append(robot)
+        return self._functionalRobots
+
+    # every time we get robots that are turned on AND alive, it will go through the function getFunctionalRobots() instead
+    functionalRobots = property(getFunctionalRobots)
 
     def updateRoLoc(self,robot,x,y):
         robot.loc=Location(x,y)
@@ -223,6 +267,7 @@ class Board:
         else:                               # TODO should throw exception
             print("Unexpected value in robotMove")
 
+
     def __str__(self):
         """Prints a properly formatted grid"""
         output = ""
@@ -230,7 +275,7 @@ class Board:
             for col in range(len(self.grid[row])):
                 for square in range(len(self.grid[row][col])):
                     output = output + str(self.grid[row][col][square])
-                for robot in self.robotList:
+                for robot in self.livingRobots:
                     if (col,row) == robot.loc:
                         output = output + str(robot)
                 output = output + '|'
