@@ -27,14 +27,16 @@ class Game:
         self.board = Board(createdRobots)
         print(self.board)
         self.deck = Deck()
+        self.handSize = 9 # TODO take this from settable user input
+        self.gameOverManGameOver = False
 
     def play(self):
-        self.executeTurn()
-        # self.executePhase()
+        while(self.gameOverManGameOver==False):
+            self.executeTurn()
 
     def executeTurn(self):
 
-        #?.deal()
+        self.dealHands()
 
         for robot in self.board.robotList:
             robot.selectInstructions()
@@ -42,22 +44,44 @@ class Game:
         for phase in range(0,self.numPhases):
             self.executePhase(phase)
 
-        # self.cleanUp()
+        self.cleanUp()
+
+
+    def dealHands(self):
+    # for each card that should be dealt, give one card to each robot, if they need one
+        for i in range(0,self.handSize):
+            for robot in self.board.robotList:
+                # TODO check if they need a card, based on damage; use global variable "handSize"
+                    if robot.damage + len(robot.hand) < self.handSize:
+                        robot.hand.append(self.deck.draw()) # pop a card from the deck and pass it to each robot's hand
 
 
     def executePhase(self,phase):
-        # grab one phase at a time and pass them to handleCards
+    # grab one phase at a time and pass them to handleCards
 
         self.handleCards(phase)
         #boardMoves()
         #lasersFire()
         self.touchSquare()
 
+    def cleanUp(self):
+    # take all cards back from hands and instruction sets and put them in the discard pile
+        for robot in self.board.robotList:
+            for i in range(0,len(robot.hand)):
+                self.deck.discard(robot.hand.pop())
+            # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
+            freeSlots = self.handSize - robot.damage
+            # this if makes sure that you never clean up more than five instructions (so, 5 or number of free slots, whichever is less)
+            if freeSlots > robot.numInstructions:
+                freeSlots = robot.numInstructions
+            for i in range (0,freeSlots):
+                self.deck.discard(robot.instructions.pop(i))
+                robot.instructions.insert(i,None)
+
     def handleCards(self,phase):
 
         for robot in self.board.robotList:
             robot.instructions[phase].executeCard(self.board,robot)
-
 
         # # TODO block that loops through by priority (use LPQ?)
         #
@@ -101,9 +125,11 @@ class Robot:
         self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
         # These are five dummy cards; later they'll get put in elsewise
-        self.instructions = [None, None, None, None, None]
-        self.hand = [TurnCard(3,600),MoveCard(5,600),TurnCard(2,600),MoveCard(-4,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600)]
-
+        self.instructions = [None, None, None, None, None] # TODO add Nones in a loop
+        self.numInstructions = 5
+        #self.hand = [TurnCard(3,600),MoveCard(5,600),TurnCard(2,600),MoveCard(-4,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600)]
+        self.hand = []
+        self.damage = 0
 
     def selectInstructions(self):
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
@@ -290,9 +316,9 @@ class Deck():
             cardreader = csv.reader(csvfile, delimiter=',')
             for row in cardreader:
                 if row[0] == 'turn':
-                    self.drawPile.append(TurnCard(row[1],row[2]))
+                    self.drawPile.append(TurnCard(int(row[1]),int(row[2])))
                 elif row[0] == 'move':
-                    self.drawPile.append(MoveCard(row[1],row[2]))
+                    self.drawPile.append(MoveCard(int(row[1]),int(row[2])))
                 else:
                     print("error: found invalid card type in deck file!")
         random.shuffle(self.drawPile)
@@ -310,8 +336,8 @@ class Deck():
     def discard(self,card):
         self.discardPile.append(card)
 
-    def __str__(self):
-        output = ''
-        for card in self.contents:
-            output = output+str(card)+'\n'
-        return output
+    # def __str__(self): #this would have to be changed if we want it because self.contents is no longer a thing
+    #     output = ''
+    #     for card in self.contents:
+    #         output = output+str(card)+'\n'
+    #     return output
