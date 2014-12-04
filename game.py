@@ -69,9 +69,14 @@ class Game:
 
     def cleanUp(self):
     # take all cards back from hands and instruction sets and put them in the discard pile
-        for robot in self.board.robotList: #discard all cards that were dealt but haven't been assigned to register phases
-            for i in range(0,len(robot.hand)):
+        for robot in self.board.robotList:
+            for i in range(0,len(robot.hand)):  #discard all cards that were dealt but haven't been assigned to register phases
                 self.deck.discard(robot.hand.pop())
+            if robot.dead == True:
+                robot.dead = False
+                robot.orient = 2 #must happen before the respawn so that it prints properly at the end of updateRoLoc #TODO make this user-settable
+                self.board.updateRoLoc(robot,robot.spawnLoc.x,robot.spawnLoc.y)
+                print("Robot has riiiiised from the deaaaaad!")
         for robot in self.board.turnedOnRobots: #discard all cards that aren't locked into a register phase
             # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
             freeSlots = self.handSize - robot.damage
@@ -105,11 +110,9 @@ class Game:
                 print('Old spawn is {},{}.'.format(robot.spawnLoc.x, robot.spawnLoc.y))
                 robot.spawnLoc = Location(robot.loc.x,robot.loc.y) #if you're at a flag, change your spawn to be the square you're on
                 print('New spawn is {},{}.'.format(robot.spawnLoc.x,robot.spawnLoc.y))
-                print('line104, checkpoint = ' + str(robot.checkpoint)) #TODO delete this is just for debuggint!
                 if robot.checkpoint < len(self.board.flagLocList): #prevents a robot that has won from index erroring the flagLocList
                     if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc: #if the nth flag is where you are (n = checkpoint), increase your checkpoint
                         robot.checkpoint = robot.checkpoint+1
-                        print('line107, checkpoint = ' + str(robot.checkpoint)) #TODO delete this is just for debuggint!
                         if robot.checkpoint == len(self.board.flagLocList):
                             print("You are Winner! Hahaha")             # TODO make an endGame() function
                 else:
@@ -144,7 +147,7 @@ class Robot:
 
     def selectInstructions(self):
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
-        while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list
+        while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list TODO check whether using 'in' rather than __contains__ might be better here
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print('{}: {}'.format(cardIndex,self.hand[cardIndex]))
 
@@ -190,6 +193,8 @@ class Board:
         self.flagLocList = []
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
+        self.numRows = 10
+        self.numCols = 10
         self._livingRobots = []
         self._turnedOnRobots = []
         self._functionalRobots = []
@@ -201,11 +206,9 @@ class Board:
         self.flagLocList.append(tempFlagPointTwo)
 
         # fill a grid representing a 10x10 board with Squares
-        numRows = 10
-        numCols = 10
-        for y in range(numRows):
+        for y in range(self.numRows):
             self.grid.append([])
-            for x in range(numCols):
+            for x in range(self.numCols):
                 self.grid[y].append([Square()])
 
         for flag in self.flagLocList:
@@ -266,7 +269,17 @@ class Board:
             self.updateRoLoc(robot,robot.loc.x-numSteps,robot.loc.y)
         else:                               # TODO should throw exception
             print("Unexpected value in robotMove")
+        if not(self.numCols>robot.loc.x>=0 and self.numRows>robot.loc.y>=0):
+            self.killRobot(robot)
+        #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
+            #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
 
+    def killRobot(self,robot):
+        self.updateRoLoc(robot,None,None) # (None,None) is Robot Hell
+        robot.damage = 2 #TODO czech that this is the right amount of damage
+        robot.dead = True
+        print("I tell you robot dead")
+        #TODO implement lives
 
     def __str__(self):
         """Prints a properly formatted grid"""
@@ -311,7 +324,6 @@ class Square():
 class SquareProperty():
     def __init__(self):
         pass
-
 
 class Flag(SquareProperty):
     def __init__(self):
