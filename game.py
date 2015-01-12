@@ -150,8 +150,13 @@ class Robot:
         while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list TODO check whether using 'in' rather than __contains__ might be better here
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print('{}: {}'.format(cardIndex,self.hand[cardIndex]))
-
-            choice = int(input("pick a card, any card!"))
+            while True:
+                raw_choice = input("pick a card, any card!")
+                try:
+                    choice = int(raw_choice)
+                    break
+                except ValueError:
+                    continue
             if 0<=choice<len(self.hand): #this checks whether the user input is in the valid range #TODO should also guarantee that input is a valid int
                 self.instructions[instructionsAdded]=self.hand.pop(choice)
                 instructionsAdded=instructionsAdded+1
