@@ -20,9 +20,10 @@ class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self):
         createdRobots = []
-        robot = Robot() # TODO dummy robot to populate the list, get real robots!
         #later the list will be populated by something else but for now it's just a single robot
-        createdRobots.append(robot) #the order of this list should never change (deprecated fact?)
+        createdRobots.append(Robot('R', Location(0,0))) #the order of this list should never change (deprecated fact?)
+        createdRobots.append(Robot('C', Location(0,4)))
+        createdRobots.append(Robot('E', Location(0,8)))
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
         print(self.board)
@@ -129,10 +130,11 @@ class Game:
 
 class Robot:
     """Names the Robot"""
-    def __init__(self):
-        self.playerName = "Player One"
+
+    def __init__(self, name, spawnLoc):
+        self.playerName = name
         #self.appearance = "R"
-        self.spawnLoc = Location(0,0) #TODO have this assigned somehow during initialization (randomize, or something)
+        self.spawnLoc = spawnLoc
         self.loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
         self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
@@ -151,7 +153,7 @@ class Robot:
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print('{}: {}'.format(cardIndex,self.hand[cardIndex]))
             while True:
-                raw_choice = input("pick a card, any card!")
+                raw_choice = input("robot {}! pick a card, any card!".format(self.playerName))
                 try:
                     choice = int(raw_choice)
                     break
@@ -219,8 +221,8 @@ class Board:
         for flag in self.flagLocList:
             self.grid[flag.y][flag.x][0].addProperty(Flag())
 
-        for robot in self.robotList:
-            self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
+#        for robot in self.robotList:
+#            self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
 
     def getLivingRobots(self): # return only robots that are not dead (i.e., alive)
         self._livingRobots = []
@@ -285,6 +287,7 @@ class Board:
         robot.dead = True
         print("I tell you robot dead")
         #TODO implement lives
+        #TODO when robots take damage, have the damage taking function check whether they've taken too much and if so kill them
 
     def __str__(self):
         """Prints a properly formatted grid"""
@@ -295,7 +298,9 @@ class Board:
                     output = output + str(self.grid[row][col][square])
                 for robot in self.livingRobots:
                     if (col,row) == robot.loc:
-                        output = output + str(robot)
+                        output = output + str(robot) + robot.playerName
+                    if (col,row) == robot.spawnLoc:
+                        output = output + 's' + robot.playerName
                 output = output + '|'
             output = output + "\n"
         return output
@@ -335,9 +340,9 @@ class Flag(SquareProperty):
         self.appearance = "F"
 
 
-class Spawn(SquareProperty):
-    def __init__(self):
-        self.appearance = "S"
+#class Spawn(SquareProperty):
+#    def __init__(self):
+#        self.appearance = "S"
 
 
 class Card():
