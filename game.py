@@ -22,8 +22,8 @@ class Game:
         createdRobots = []
         #later the list will be populated by something else but for now it's just a single robot
         createdRobots.append(Robot('R', Location(0,0))) #the order of this list should never change (deprecated fact?)
-        createdRobots.append(Robot('C', Location(0,4)))
-        createdRobots.append(Robot('E', Location(0,8)))
+        #createdRobots.append(Robot('C', Location(0,4)))
+        #createdRobots.append(Robot('E', Location(0,8)))
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
         print(self.board)
@@ -218,6 +218,10 @@ class Board:
             for x in range(self.numCols):
                 self.grid[y].append([Square()])
 
+        # add walls to board
+        self.grid[5][5][0].addProperty(Wall(2))
+        self.grid[5][5][0].addProperty(Wall(3))
+
         for flag in self.flagLocList:
             self.grid[flag.y][flag.x][0].addProperty(Flag())
 
@@ -265,19 +269,40 @@ class Board:
     def robotTurn(self,robot,numSteps):
         self.updateRoOrient(robot,robot.orient + numSteps)
 
-    def robotMove(self,robot,numSteps):
-        if robot.orient == 0: # facing north, subtract from y
-            self.updateRoLoc(robot,robot.loc.x,robot.loc.y-numSteps)
-        elif robot.orient == 1: # facing east, add to x
-            self.updateRoLoc(robot,robot.loc.x+numSteps,robot.loc.y)
-        elif robot.orient == 2: # facing south, add to y
-            self.updateRoLoc(robot,robot.loc.x,robot.loc.y+numSteps)
-        elif robot.orient == 3: # facing west, subtract x
-            self.updateRoLoc(robot,robot.loc.x-numSteps,robot.loc.y)
+    def robotMove(self,robot,numSteps,moveDirection=None):
+        if moveDirection == None:
+            moveDirection = robot.orient
+
+
+
+        tempX = robot.loc.x
+        tempY = robot.loc.y
+
+
+        if moveDirection == 0: # facing north, subtract from y
+            tempY=tempY-numSteps
+            #self.updateRoLoc(robot,robot.loc.x,robot.loc.y-numSteps)
+        elif moveDirection == 1: # facing east, add to x
+            tempX=tempX+numSteps
+            #self.updateRoLoc(robot,robot.loc.x+numSteps,robot.loc.y)
+        elif moveDirection == 2: # facing south, add to y
+            tempY=tempY+numSteps
+            #self.updateRoLoc(robot,robot.loc.x,robot.loc.y+numSteps)
+        elif moveDirection == 3: # facing west, subtract x
+            tempX=tempX-numSteps
+            #self.updateRoLoc(robot,robot.loc.x-numSteps,robot.loc.y)
         else:                               # TODO should throw exception
             print("Unexpected value in robotMove")
+
+
+        self.updateRoLoc(robot,tempX,tempY)
+
+
         if not(self.numCols>robot.loc.x>=0 and self.numRows>robot.loc.y>=0):
             self.killRobot(robot)
+
+
+
         #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
             #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
 
@@ -339,6 +364,27 @@ class Flag(SquareProperty):
     def __init__(self):
         self.appearance = "F"
 
+class Wall(SquareProperty):
+    def __init__(self,orient):
+        self.orient = orient
+        #create appearnce for wall based on orientation
+        if self.orient == 0:
+            self.appearance = "-"
+        elif self.orient == 1:
+            self.appearance = "]"
+        elif self.orient == 2:
+            self.appearance = "_"
+        elif self.orient == 3:
+            self.appearance = "["
+        else:                           # TODO should throw exception
+            print ("Unexpected value in Wall.appearance")
+
+
+class Laser(Wall):
+    pass
+
+class Pusher(Wall):
+    pass
 
 #class Spawn(SquareProperty):
 #    def __init__(self):
