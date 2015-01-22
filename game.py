@@ -2,7 +2,7 @@ from collections import namedtuple
 import csv
 import random
 
-Location = namedtuple('Location', ['x','y'])
+Location = namedtuple("Location", ["x","y"])
 
 
     # def getOrient(self):
@@ -21,9 +21,9 @@ class Game:
     def __init__(self):
         createdRobots = []
         #later the list will be populated by something else but for now it's just a single robot
-        createdRobots.append(Robot('R', Location(0,0))) #the order of this list should never change (deprecated fact?)
-        #createdRobots.append(Robot('C', Location(0,4)))
-        #createdRobots.append(Robot('E', Location(0,8)))
+        createdRobots.append(Robot("R", Location(0,0))) #the order of this list should never change (deprecated fact?)
+        #createdRobots.append(Robot("C", Location(0,4)))
+        #createdRobots.append(Robot("E", Location(0,8)))
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
         print(self.board)
@@ -102,15 +102,15 @@ class Game:
         #     self.board.robotTurn(tempRobot, tempCard.numSteps)
         # else:
         #     # TODO should throw exception
-        #     print('trying to execute card of invalid type')
+        #     print("trying to execute card of invalid type")
 
 
     def touchSquare(self):
         for robot in self.board.functionalRobots:
             if (self.board.grid[robot.loc.y][robot.loc.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
-                print('Old spawn is {},{}.'.format(robot.spawnLoc.x, robot.spawnLoc.y))
+                print("Old spawn is {},{}.".format(robot.spawnLoc.x, robot.spawnLoc.y))
                 robot.spawnLoc = Location(robot.loc.x,robot.loc.y) #if you're at a flag, change your spawn to be the square you're on
-                print('New spawn is {},{}.'.format(robot.spawnLoc.x,robot.spawnLoc.y))
+                print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
                 if robot.checkpoint < len(self.board.flagLocList): #prevents a robot that has won from index erroring the flagLocList
                     if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc: #if the nth flag is where you are (n = checkpoint), increase your checkpoint
                         robot.checkpoint = robot.checkpoint+1
@@ -151,7 +151,7 @@ class Robot:
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
         while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list TODO check whether using 'in' rather than __contains__ might be better here
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
-                print('{}: {}'.format(cardIndex,self.hand[cardIndex]))
+                print("{}: {}".format(cardIndex,self.hand[cardIndex]))
             while True:
                 raw_choice = input("robot {}! pick a card, any card!".format(self.playerName))
                 try:
@@ -325,8 +325,8 @@ class Board:
                     if (col,row) == robot.loc:
                         output = output + str(robot) + robot.playerName
                     if (col,row) == robot.spawnLoc:
-                        output = output + 's' + robot.playerName
-                output = output + '|'
+                        output = output + "s" + robot.playerName
+                output = output + "|"
             output = output + "\n"
         return output
 
@@ -334,7 +334,7 @@ class Board:
 class Square():
     """Creates an appearance for the square"""
     def __init__(self):
-        self.appearance = '.'
+        self.appearance = "."
         self.propertyList = []
 
     def addProperty(self,property):
@@ -425,12 +425,12 @@ class Deck():
     def __init__(self):
         self.drawPile = []
         self.discardPile = []
-        with open('deck.csv', newline='') as csvfile:
-            cardreader = csv.reader(csvfile, delimiter=',')
+        with open("deck.csv", newline="") as csvfile:
+            cardreader = csv.reader(csvfile, delimiter=",")
             for row in cardreader:
-                if row[0] == 'turn':
+                if row[0] == "turn":
                     self.drawPile.append(TurnCard(int(row[1]),int(row[2])))
-                elif row[0] == 'move':
+                elif row[0] == "move":
                     self.drawPile.append(MoveCard(int(row[1]),int(row[2])))
                 else:
                     print("error: found invalid card type in deck file!")
@@ -450,7 +450,7 @@ class Deck():
         self.discardPile.append(card)
 
     # def __str__(self): #this would have to be changed if we want it because self.contents is no longer a thing
-    #     output = ''
+    #     output = ""
     #     for card in self.contents:
-    #         output = output+str(card)+'\n'
+    #         output = output+str(card)+"\n"
     #     return output
