@@ -258,6 +258,49 @@ class Board:
     # every time we get robots that are turned on AND alive, it will go through the function getFunctionalRobots() instead
     functionalRobots = property(getFunctionalRobots)
 
+
+    # Does calculus to figure out coordinates of next square given direction you want to move
+    def getNextLoc(self,x,y,orient):
+        if orient == 0: # facing north, subtract from y
+            y=y-1
+        elif orient == 1: # facing east, add to x
+            x=x+1
+        elif orient == 2: # facing south, add to y
+            y=y+1
+        elif orient == 3: # facing west, subtract x
+            x=x-1
+        else:                               # TODO should throw exception
+            print("Unexpected value in getNextLoc")
+
+        return Location(x,y)
+
+
+    def getNextObst(self,x,y,orient):
+        # if, on my square, there is a wall with matching alignment, return 1 (1 means wall)
+        #if self.grid[y][x][0].hasProperty(Wall):
+        for property in self.grid[y][x][0].propertyList:
+            if isinstance(property,Wall):
+                if property.orient == orient:
+                    return 1
+
+        #if, on the next square (gotten from getNextLoc
+        # (which might give None in which case we should return None probably?), presumably), there is a wall with opposite alignment ((i+2)%4), return 1
+        #if self.getNextLoc(x,y,orient) == None:
+        #    return None
+        nextLoc = self.getNextLoc(x,y,orient)
+        for property in self.grid[nextLoc.y][nextLoc.x][0].propertyList:
+            if isinstance(property,Wall):
+                if (property.orient + 2) % 4 == orient:
+                    return 1
+
+        # if, on the next square, there is a robot, return the robot
+        for robot in self.getLivingRobots():
+            if robot.loc.x == nextLoc.x and robot.loc.y == nextLoc.y:
+                return robot
+
+        # return 0
+        return 0
+
     def updateRoLoc(self,robot,x,y):
         robot.loc=Location(x,y)
         print(self)
@@ -269,42 +312,34 @@ class Board:
     def robotTurn(self,robot,numSteps):
         self.updateRoOrient(robot,robot.orient + numSteps)
 
-    def robotMove(self,robot,numSteps,moveDirection=None):
-        if moveDirection == None:
+
+    def robotMove(self,robot,numSteps=1,moveDirection=None):
+        if moveDirection == None: # moveDirection can be a direction other than the robot's orientation because you can get pushed e.g., sideways, which will use robotMove()
             moveDirection = robot.orient
 
+        # If we're moving backwards, flip the move direction and make numSteps positive so the for loop below works
+        if numSteps < 0:
+            numSteps = numSteps * -1
+            moveDirection = (moveDirection + 2) % 4
+
+        for step in range(numSteps):
+            nextObst = self.getNextObst(robot.loc.x,robot.loc.y,moveDirection)
+            nextLoc = self.getNextLoc(robot.loc.x,robot.loc.y,moveDirection)
+            if nextObst == 0:
+                self.updateRoLoc(robot,nextLoc.x,nextLoc.y)
+            elif nextObst == 1: # TODO remove this; because it's debugging code
+                print("You hit a wall!")
+            elif isinstance(nextObst,Robot): # if there's a robot in the way, move that robot
+                self.robotMove(nextObst,1,moveDirection)
 
 
-        tempX = robot.loc.x
-        tempY = robot.loc.y
-
-
-        if moveDirection == 0: # facing north, subtract from y
-            tempY=tempY-numSteps
-            #self.updateRoLoc(robot,robot.loc.x,robot.loc.y-numSteps)
-        elif moveDirection == 1: # facing east, add to x
-            tempX=tempX+numSteps
-            #self.updateRoLoc(robot,robot.loc.x+numSteps,robot.loc.y)
-        elif moveDirection == 2: # facing south, add to y
-            tempY=tempY+numSteps
-            #self.updateRoLoc(robot,robot.loc.x,robot.loc.y+numSteps)
-        elif moveDirection == 3: # facing west, subtract x
-            tempX=tempX-numSteps
-            #self.updateRoLoc(robot,robot.loc.x-numSteps,robot.loc.y)
-        else:                               # TODO should throw exception
-            print("Unexpected value in robotMove")
-
-
-        self.updateRoLoc(robot,tempX,tempY)
-
-
-        if not(self.numCols>robot.loc.x>=0 and self.numRows>robot.loc.y>=0):
-            self.killRobot(robot)
+            if not(self.numCols>robot.loc.x>=0 and self.numRows>robot.loc.y>=0):
+                self.killRobot(robot)
 
 
 
-        #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
-            #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
+            #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
+                #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
 
     def killRobot(self,robot):
         self.updateRoLoc(robot,None,None) # (None,None) is Robot Hell
