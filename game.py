@@ -153,7 +153,9 @@ class Robot:
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print("{}: {}".format(cardIndex,self.hand[cardIndex]))
             while True:
-                raw_choice = input("robot {}! pick a card, any card!".format(self.playerName))
+                raw_choice = input("robot {}! pick a card, any card! (enter 'q' quit being so loopy): ".format(self.playerName))
+                if choice == "q":
+                   quit()
                 try:
                     choice = int(raw_choice)
                     break
