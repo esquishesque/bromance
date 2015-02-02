@@ -22,11 +22,11 @@ class Game:
         createdRobots = []
         #later the list will be populated by something else but for now it's just a single robot
         createdRobots.append(Robot("R", Location(0,0))) #the order of this list should never change (deprecated fact?)
-        #createdRobots.append(Robot("C", Location(0,4)))
+        createdRobots.append(Robot("C", Location(0,4)))
         #createdRobots.append(Robot("E", Location(0,8)))
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
-        print(self.board)
+        #print(self.board)
         self.deck = Deck()
         self.handSize = 9 # TODO take this from settable user input
         self.gameOverManGameOver = False
@@ -40,7 +40,9 @@ class Game:
 
         self.dealHands()
 
+
         for robot in self.board.turnedOnRobots:
+            print("current board:\n{}".format(self.board))
             robot.selectInstructions()
 
         for phase in range(0,self.numPhases):
@@ -92,6 +94,7 @@ class Game:
 
         for robot in list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)):
             robot.instructions[phase].executeCard(self.board,robot)
+            print(self.board)
 
         # # TODO block that loops through by priority (use LPQ?)
         #
@@ -154,7 +157,7 @@ class Robot:
                 print("{}: {}".format(cardIndex,self.hand[cardIndex]))
             while True:
                 raw_choice = input("robot {}! pick a card, any card! (enter 'q' quit being so loopy): ".format(self.playerName))
-                if choice == "q":
+                if raw_choice == "q":
                    quit()
                 try:
                     choice = int(raw_choice)
@@ -263,6 +266,8 @@ class Board:
 
     # Does calculus to figure out coordinates of next square given direction you want to move
     def getNextLoc(self,x,y,orient):
+
+
         if orient == 0: # facing north, subtract from y
             y=y-1
         elif orient == 1: # facing east, add to x
@@ -289,7 +294,13 @@ class Board:
         # (which might give None in which case we should return None probably?), presumably), there is a wall with opposite alignment ((i+2)%4), return 1
         #if self.getNextLoc(x,y,orient) == None:
         #    return None
+
+
         nextLoc = self.getNextLoc(x,y,orient)
+
+        if not(self.numCols>nextLoc.x>=0 and self.numRows>nextLoc.y>=0):
+            return None
+
         for property in self.grid[nextLoc.y][nextLoc.x][0].propertyList:
             if isinstance(property,Wall):
                 if (property.orient + 2) % 4 == orient:
@@ -305,11 +316,11 @@ class Board:
 
     def updateRoLoc(self,robot,x,y):
         robot.loc=Location(x,y)
-        print(self)
+        #print(self)
 
     def updateRoOrient(self,robot,i):
         robot.orient = i
-        print(self)
+        #print(self)
 
     def robotTurn(self,robot,numSteps):
         self.updateRoOrient(robot,robot.orient + numSteps)
@@ -329,15 +340,18 @@ class Board:
             nextLoc = self.getNextLoc(robot.loc.x,robot.loc.y,moveDirection)
             if nextObst == 0:
                 self.updateRoLoc(robot,nextLoc.x,nextLoc.y)
+                return True
             elif nextObst == 1: # TODO remove this; because it's debugging code
                 print("You hit a wall!")
+                return False
             elif isinstance(nextObst,Robot): # if there's a robot in the way, move that robot
-                self.robotMove(nextObst,1,moveDirection)
-
-
-            if not(self.numCols>robot.loc.x>=0 and self.numRows>robot.loc.y>=0):
+                if (self.robotMove(nextObst,1,moveDirection)): #this moves the obstacle robot
+                    self.updateRoLoc(robot,nextLoc.x,nextLoc.y) #if that obstacle robot move returns True (meaning obstacle robot is now out of the way)
+                    return True
+            elif nextObst == None:
                 self.killRobot(robot)
-
+                return True
+                break #if the robot dies mid move-2 (or move-3 or move>1) this will break out of the step loop, preventing looking for the nextObst when the robot has a location of None,None
 
 
             #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
@@ -347,7 +361,7 @@ class Board:
         self.updateRoLoc(robot,None,None) # (None,None) is Robot Hell
         robot.damage = 2 #TODO czech that this is the right amount of damage
         robot.dead = True
-        print("I tell you robot dead")
+        print("I tell you robot {} dead".format(robot))
         #TODO implement lives
         #TODO when robots take damage, have the damage taking function check whether they've taken too much and if so kill them
 
