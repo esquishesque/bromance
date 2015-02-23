@@ -18,12 +18,7 @@ Location = namedtuple("Location", ["x","y"])
 
 class Game:
     """Creates Robot(s), creates a Board"""
-    def __init__(self):
-        createdRobots = []
-        #later the list will be populated by something else but for now it's just a single robot
-        createdRobots.append(Robot("R", Location(0,0))) #the order of this list should never change (deprecated fact?)
-        createdRobots.append(Robot("C", Location(0,4)))
-        #createdRobots.append(Robot("E", Location(0,8)))
+    def __init__(self, createdRobots):
         self.numPhases = 5 # number of instruction positions (register phases)
         self.board = Board(createdRobots)
         #print(self.board)
@@ -126,9 +121,6 @@ class Game:
 
             pass
 
-    def deal(self):
-        pass
-
 
 
 class Robot:
@@ -152,7 +144,7 @@ class Robot:
 
     def selectInstructions(self):
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
-        while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list TODO check whether using 'in' rather than __contains__ might be better here
+        while(None in self.instructions): #this loops through so long as there are any Nones left in the list
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print("{}: {}".format(cardIndex,self.hand[cardIndex]))
             while True:
