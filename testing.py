@@ -89,8 +89,6 @@ class TestCleanUp(unittest.TestCase):
         self.game.cleanUp()
         self.assertIs(cardBeforeCleanUp,robot.instructions[-1]) # locked card from before cleanUp() has stuck around
 
-
-
 class TestRobotTurn(unittest.TestCase):
     def setUp(self):
         self.game = Game([Robot("R", Location(0,0))])
@@ -111,6 +109,112 @@ class TestRobotTurn(unittest.TestCase):
 
     #make sure it's modded and shit
 
+class TestRobotMove(unittest.TestCase):
+    def setUp(self):
+        self.game = Game([Robot("R", Location(1,1))])
+        self.robot = self.game.board.robotList[0]
+        self.robot.orient = 1
+
+    def test_robotFacingEast_moveOne_movedOne(self):
+        self.game.board.robotMove(self.robot,1)
+        self.assertEqual(self.robot.loc,Location(2,1))
+
+    def test_robotFacingEast_moveThree_movedThree(self):
+        self.game.board.robotMove(self.robot,3)
+        self.assertEqual(self.robot.loc,Location(4,1))
+
+    def test_robotFacingEast_moveBackwardOne_movedBackwardOne(self):
+        self.game.board.robotMove(self.robot,-1)
+        self.assertEqual(self.robot.loc,Location(0,1))
+
+    def test_robotFacingEastWallOnSameSquare_moveForwardOne_staysPut(self):
+        self.game.board.grid[1][1][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robot,1)
+        self.assertEqual(self.robot.loc, Location(1,1))
+
+    def test_robotFacingEastWall_moveBackwardOne_movesBack(self):
+        self.game.board.grid[1][1][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robot,-1)
+        self.assertEqual(self.robot.loc, Location(0,1))
+
+    def test_robotFacingWestWallOnNextSquare_moveForwardOne_staysPut(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(3))
+        #print(self.game.board)
+        self.game.board.robotMove(self.robot,1)
+        self.assertEqual(self.robot.loc, Location(1,1))
+
+    def test_robotFacingWestWallOnNextSquare_moveForwardThree_staysPut(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(3))
+        #print(self.game.board)
+        self.game.board.robotMove(self.robot,3)
+        self.assertEqual(self.robot.loc, Location(1,1))
+
+    def test_robotFacingEastWallOneSquareAway_moveOne_movesOne(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robot,1)
+        self.assertEqual(self.robot.loc, Location(2,1))
+
+    def test_robotFacingEastWallOneSquareAway_moveTwo_movesOne(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robot,2)
+        self.assertEqual(self.robot.loc, Location(2,1))
+
+    def test_robotFacingParallelWall_moveTwo_movesTwo(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(2))
+        #print(self.game.board)
+        self.game.board.robotMove(self.robot,2)
+        self.assertEqual(self.robot.loc, Location(3,1))
+
+
+
+
+class TestRobotPush(unittest.TestCase):
+    def setUp(self):
+        self.game = Game([Robot("R", Location(1,1)), Robot("C", Location(2,1)), Robot("E",Location(4,1))])
+        self.robotR = self.game.board.robotList[0]
+        self.robotR.orient = 1
+        self.robotC = self.game.board.robotList[1]
+        self.robotC.orient = 1
+        self.robotE = self.game.board.robotList[2]
+        self.robotE.orient = 1
+
+    def test_twoConsecutiveRobots_pushOneRobotForwardIntoAir_robotPushed(self):
+        self.game.board.robotMove(self.robotR,1)
+        self.assertEqual(self.robotC.loc,Location(3,1))
+
+    def test_twoConsecutiveRobots_pushOneRobotBackwardIntoAir_robotPushed(self):
+        self.game.board.robotMove(self.robotC,-1)
+        self.assertEqual(self.robotR.loc,Location(0,1))
+
+    def test_threeConsecutiveRobots_pushTwoRobotsForwardIntoAir_robotsPushed(self):
+        self.game.board.robotMove(self.robotR,2)
+        self.assertEqual(self.robotC.loc,Location(4,1))
+        self.assertEqual(self.robotE.loc,Location(5,1))
+
+    def test_threeConsecutiveRobots_pushTwoRobotsBackwardIntoAir_robotsPushed(self):
+        self.game.board.robotMove(self.robotE,-2)
+        self.assertEqual(self.robotC.loc,Location(1,1))
+        self.assertEqual(self.robotR.loc,Location(0,1))
+
+    def test_twoConsecutiveRobots_pushRobotBackwardOffBoard_robotDead(self):
+        self.game.board.robotMove(self.robotC,-2)
+        self.assertTrue(self.robotR.dead)
+        self.assertEqual(self.robotC.loc,Location(0,1))
+
+    def test_twoConsecutiveRobotsWallBetween_pushRobot_robotsStayPut(self):
+        self.game.board.grid[1][1][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robotR,1)
+        self.assertEqual(self.robotC.loc,Location(2,1))
+        self.assertEqual(self.robotR.loc,Location(1,1))
+
+    def test_twoConsecutiveRobotsWallAtEnd_pushRobot_robotsStayPut(self):
+        self.game.board.grid[1][2][0].addProperty(Wall(1))
+        self.game.board.robotMove(self.robotR,1)
+        self.assertEqual(self.robotC.loc,Location(2,1))
+        self.assertEqual(self.robotR.loc,Location(1,1))
+
+
+
 class TestTouchSquare(unittest.TestCase):
     def setUp(self):
         self.spawnLoc = Location(0,0)
@@ -126,6 +230,8 @@ class TestTouchSquare(unittest.TestCase):
         self.game.touchSquare()
         self.assertEqual(originalCheckpoint+1,self.robot.checkpoint)
         self.assertEqual(self.robot.spawnLoc,self.flagLoc)
+
+
 
 
 if __name__ == '__main__':

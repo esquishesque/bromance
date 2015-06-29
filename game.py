@@ -77,7 +77,7 @@ class Game:
                 robot.dead = False
                 robot.orient = 2 #must happen before the respawn so that it prints properly at the end of updateRoLoc #TODO make this user-settable
                 self.board.updateRoLoc(robot,robot.spawnLoc.x,robot.spawnLoc.y)
-                print("Robot has riiiiised from the deaaaaad!")
+                print("Robot {} has riiiiised from the deaaaaad!").format(robot.playerName)
         for robot in self.board.turnedOnRobots: #discard all cards that aren't locked into a register phase
             # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
             freeSlots = self.handSize - robot.damage
@@ -90,9 +90,18 @@ class Game:
 
     def handleCards(self,phase):
 
-        for robot in list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)):
+        #TODO why the fuck is this the instersection of functionalRobots and functionalRobots...one is supposed to be living???!?
+        #print(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)))
+        #print(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots))[0].instructions[phase].priority)
+
+        for robot in sorted(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)),key=lambda robot: robot.instructions[phase].priority, reverse=True):
+        #for robot in list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)):
             robot.instructions[phase].executeCard(self.board,robot)
             print(self.board)
+
+
+
+
 
         # # TODO block that loops through by priority (use LPQ?)
         #
@@ -330,33 +339,41 @@ class Board:
             numSteps = numSteps * -1
             moveDirection = (moveDirection + 2) % 4
 
+        # before you take each step, make sure you're still alive; break if you're dead
         for step in range(numSteps):
-            nextObst = self.getNextObst(robot.loc.x,robot.loc.y,moveDirection)
-            nextLoc = self.getNextLoc(robot.loc.x,robot.loc.y,moveDirection)
-            if nextObst == 0:
-                self.updateRoLoc(robot,nextLoc.x,nextLoc.y)
-                return True
-            elif nextObst == 1: # TODO remove this; because it's debugging code
-                print("You hit a wall!")
-                return False
-            elif isinstance(nextObst,Robot): # if there's a robot in the way, move that robot
-                if (self.robotMove(nextObst,1,moveDirection)): #this moves the obstacle robot
-                    self.updateRoLoc(robot,nextLoc.x,nextLoc.y) #if that obstacle robot move returns True (meaning obstacle robot is now out of the way)
-                    return True
-            elif nextObst == None:
-                self.killRobot(robot)
-                return True
-                break #if the robot dies mid move-2 (or move-3 or move>1) this will break out of the step loop, preventing looking for the nextObst when the robot has a location of None,None
-
+            if not robot.dead:
+                self.robotStep(robot,moveDirection)
+            else:
+                break
 
             #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
                 #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
+
+
+    def robotStep(self,robot,moveDirection):
+        nextObst = self.getNextObst(robot.loc.x,robot.loc.y,moveDirection)
+        nextLoc = self.getNextLoc(robot.loc.x,robot.loc.y,moveDirection)
+        if nextObst == 0:
+            self.updateRoLoc(robot,nextLoc.x,nextLoc.y)
+            return True
+        elif nextObst == 1: # TODO remove this; because it's debugging code
+            print("You hit a wall!")
+            return False
+        elif isinstance(nextObst,Robot): # if there's a robot in the way, move that robot
+            if (self.robotStep(nextObst,moveDirection)): #this moves the obstacle robot
+                self.updateRoLoc(robot,nextLoc.x,nextLoc.y) #if that obstacle robot move returns True (meaning obstacle robot is now out of the way)
+                return True
+        elif nextObst == None:
+            self.killRobot(robot)
+            return True
+
+
 
     def killRobot(self,robot):
         self.updateRoLoc(robot,None,None) # (None,None) is Robot Hell
         robot.damage = 2 #TODO czech that this is the right amount of damage
         robot.dead = True
-        print("I tell you robot {} dead".format(robot))
+        print("I tell you robot {} dead".format(robot.playerName))
         #TODO implement lives
         #TODO when robots take damage, have the damage taking function check whether they've taken too much and if so kill them
 
