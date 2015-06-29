@@ -16,16 +16,13 @@ Location = namedtuple("Location", ["x","y"])
     # orient = property(getOrient,setOrient)
 
 
+
+
 class Game:
     """Creates Robot(s), creates a Board"""
-    def __init__(self):
-        createdRobots = []
-        #later the list will be populated by something else but for now it's just a single robot
-        createdRobots.append(Robot("R", Location(0,0))) #the order of this list should never change (deprecated fact?)
-        createdRobots.append(Robot("C", Location(0,4)))
-        #createdRobots.append(Robot("E", Location(0,8)))
+    def __init__(self, createdRobots,flagLocList=[Location(0,2),Location(0,4)]):  # TODO generate these better with a function later
         self.numPhases = 5 # number of instruction positions (register phases)
-        self.board = Board(createdRobots)
+        self.board = Board(createdRobots,flagLocList)
         #print(self.board)
         self.deck = Deck()
         self.handSize = 9 # TODO take this from settable user input
@@ -126,9 +123,6 @@ class Game:
 
             pass
 
-    def deal(self):
-        pass
-
 
 
 class Robot:
@@ -152,7 +146,7 @@ class Robot:
 
     def selectInstructions(self):
         instructionsAdded = 0 #this is counting how many Nones we've replaced so that we know which instruction we're on
-        while(self.instructions.__contains__(None)): #this loops through so long as there are any Nones left in the list TODO check whether using 'in' rather than __contains__ might be better here
+        while(None in self.instructions): #this loops through so long as there are any Nones left in the list
             for cardIndex in range (len(self.hand)): #this loops through all the cards in the hand in order to print them
                 print("{}: {}".format(cardIndex,self.hand[cardIndex]))
             while True:
@@ -196,13 +190,13 @@ class Robot:
 
 
 class Board:
-    def __init__(self, robotList):
+    def __init__(self, robotList, flagLocList):
         """Creates a grid, and fills it with squares"""
         self.grid = []
         #list of spawn point locations, which will change as robots hit flags
         self.spawnLocList = []
         #list of flag locations, which will never change
-        self.flagLocList = []
+        self.flagLocList = flagLocList
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
         self.numRows = 10
@@ -211,11 +205,11 @@ class Board:
         self._turnedOnRobots = []
         self._functionalRobots = []
 
-        #populate list of flag locations; crucially this is [x,y] NOT [row,col]
-        tempFlagPoint = Location(0,2) # TODO generate these better with a function later
-        self.flagLocList.append(tempFlagPoint)
-        tempFlagPointTwo = Location(0,4)
-        self.flagLocList.append(tempFlagPointTwo)
+        # #populate list of flag locations; crucially this is [x,y] NOT [row,col]
+        # tempFlagPoint = Location(0,2) # TODO generate these better with a function later
+        # self.flagLocList.append(tempFlagPoint)
+        # tempFlagPointTwo = Location(0,4)
+        # self.flagLocList.append(tempFlagPointTwo)
 
         # fill a grid representing a 10x10 board with Squares
         for y in range(self.numRows):
