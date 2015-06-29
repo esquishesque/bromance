@@ -1,6 +1,7 @@
 from collections import namedtuple
 import csv
 import random
+import asciiboard
 
 Location = namedtuple("Location", ["x","y"])
 
@@ -361,19 +362,7 @@ class Board:
 
     def __str__(self):
         """Prints a properly formatted grid"""
-        output = ""
-        for row in range(len(self.grid)):
-            for col in range(len(self.grid[row])):
-                for square in range(len(self.grid[row][col])):
-                    output = output + str(self.grid[row][col][square])
-                for robot in self.livingRobots:
-                    if (col,row) == robot.loc:
-                        output = output + str(robot) + robot.playerName
-                    if (col,row) == robot.spawnLoc:
-                        output = output + "s" + robot.playerName
-                output = output + "|"
-            output = output + "\n"
-        return output
+        return asciiboard.printAsciiBoard(self)
 
 
 class Square():
