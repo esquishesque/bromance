@@ -115,8 +115,7 @@ def getLineThreeString(board,row,col):
 
     return string
 
-# FIXME I want this to do the three lines, but I need to make sure those lines are getting passed
-# the right row and looping through all the columns
+
 def doRow(board,row):
     """Return string for a row worth of ASCII board cells"""
     string = "|"
@@ -136,6 +135,7 @@ def doRow(board,row):
     string += "\n"
 
     return string
+
 
 def printAsciiBoard(board):
     """Return string for an ASCII-formatted board"""
