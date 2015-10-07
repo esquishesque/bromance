@@ -77,7 +77,7 @@ class Game:
                 robot.dead = False
                 robot.orient = 2 #must happen before the respawn so that it prints properly at the end of updateRoLoc #TODO make this user-settable
                 self.board.updateRoLoc(robot,robot.spawnLoc.x,robot.spawnLoc.y)
-                print("Robot {} has riiiiised from the deaaaaad!").format(robot.playerName)
+                print("Robot {} has riiiiised from the deaaaaad!".format(robot.playerName))
         for robot in self.board.turnedOnRobots: #discard all cards that aren't locked into a register phase
             # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
             freeSlots = self.handSize - robot.damage
@@ -88,15 +88,15 @@ class Game:
                 self.deck.discard(robot.instructions.pop(i))
                 robot.instructions.insert(i,None)
 
-    def handleCards(self,phase):
+    def handleCards(self, phase):
 
         #TODO why the fuck is this the instersection of functionalRobots and functionalRobots...one is supposed to be living???!?
         #print(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)))
         #print(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots))[0].instructions[phase].priority)
 
-        for robot in sorted(list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)),key=lambda robot: robot.instructions[phase].priority, reverse=True):
+        for robot in sorted(list(set(self.board.functionalRobots)), key=lambda robot: robot.instructions[phase].priority, reverse=True):
         #for robot in list(set(self.board.functionalRobots).intersection(self.board.functionalRobots)):
-            robot.instructions[phase].executeCard(self.board,robot)
+            robot.instructions[phase].executeCard(self.board, robot)
             print(self.board)
 
 
@@ -370,7 +370,7 @@ class Board:
 
 
     def killRobot(self,robot):
-        self.updateRoLoc(robot,None,None) # (None,None) is Robot Hell
+        self.updateRoLoc(robot, None, None) #(None,None) is Robot Hell
         robot.damage = 2 #TODO czech that this is the right amount of damage
         robot.dead = True
         print("I tell you robot {} dead".format(robot.playerName))
