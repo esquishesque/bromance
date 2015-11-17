@@ -235,15 +235,24 @@ class TestTouchSquare(unittest.TestCase):
 
 class TestHandleCards(unittest.TestCase):
     def setUp(self):
-        self.game = Game([Robot("R", Location(1,1)), Robot("C", Location(2,1)))])
+        self.game = Game([Robot("R", Location(2,1)), Robot("C", Location(1,1))])
         self.robotR = self.game.board.robotList[0]
         self.robotR.orient = 1
         self.robotC = self.game.board.robotList[1]
         self.robotC.orient = 1
     def test_firstRobot_hasHigherPriority_movesFirst(self):
-        pass
+        self.robotR.instructions=[MoveCard(1,600)]
+        self.robotC.instructions=[MoveCard(1,400)]
+        self.game.executePhase(0)
+        #print(self.robotR.loc)
+        self.assertEqual(self.robotR.loc,Location(3,1))
     def test_firstRobot_hasLowerPriority_movesSecond(self):
-        pass
+        self.robotR.instructions=[MoveCard(1,400)]
+        self.robotC.instructions=[MoveCard(1,600)]
+        self.game.executePhase(0)
+        #print(self.robotR.loc)
+        self.assertEqual(self.robotR.loc,Location(4,1))
+
 
 if __name__ == '__main__':
     unittest.main()

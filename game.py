@@ -448,7 +448,7 @@ class Card():
         self.numSteps = numSteps # TODO make deck
 
     def executeCard(self,board,robot):
-        print("This should never happen!")
+        print("This should never happen because that would mean that there's a card type without its own execute function!")
 
     #def __str__(self):
     #    print()
