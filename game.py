@@ -230,6 +230,9 @@ class Board:
         # add walls to board
         self.grid[5][5][0].addProperty(Wall(2))
         self.grid[5][5][0].addProperty(Wall(3))
+        self.grid[6][6][0].addProperty(Laser(3))
+
+        self.laserList = []
 
         for flag in self.flagLocList:
             self.grid[flag.y][flag.x][0].addProperty(Flag())
@@ -287,6 +290,9 @@ class Board:
 
 
     def getNextObst(self,x,y,orient):
+        '''
+        :return: 0 if no obstacle, 1 if Wall in the way, robot instance if a Robot, and None if off edge of board
+        '''
         # if, on my square, there is a wall with matching alignment, return 1 (1 means wall)
         #if self.grid[y][x][0].hasProperty(Wall):
         for property in self.grid[y][x][0].propertyList:
@@ -302,6 +308,7 @@ class Board:
 
         nextLoc = self.getNextLoc(x,y,orient)
 
+        # return None if you run off the edge of the board
         if not(self.numCols>nextLoc.x>=0 and self.numRows>nextLoc.y>=0):
             return None
 
@@ -375,7 +382,49 @@ class Board:
         robot.dead = True
         print("I tell you robot {} dead".format(robot.playerName))
         #TODO implement lives
-        #TODO when robots take damage, have the damage taking function check whether they've taken too much and if so kill them
+
+
+    def damageRobot(self,robot,damagePoints):
+        robot.damage += damagePoints
+        # if we've taken all the damage we can, kill the robot
+        if robot.damage >= self.handSize:
+            self.killRobot(robot)
+
+        def fireLasers(self):
+
+            pass
+        """
+        copy list of functional robots
+        for robot in that list:
+            damage getTarget() unless it's none
+
+        for lasers on board:
+            if robot on my square:
+                damage it
+            else
+                damage getTarget() unless it's none
+
+
+
+        getTarget()
+            so long as getNextObst() returns 0, ask getNextObst() about getNextLoc()
+            then if you have a robot, damage it!
+            (this will just let the function end naturally if it hit a wall, i think)
+
+        """
+
+
+     def getTarget(self,x,y,orient):
+        nextObst = self.getNextObst(x,y,orient)
+        nextLoc = self.getNextLoc(x,y,orient)
+        while nextObst == 0:
+            nextObst = self.getNextObst(nextLoc.x,nextLoc.y,orient)
+            nextLoc = self.getNextLoc(nextLoc.x,nextLoc.y,orient)
+        if isinstance(nextObst,Robot):
+            return nextObst # this is the robot that should take damage
+        else:
+            return None # no damageable target
+
 
     def __str__(self):
         """Prints a properly formatted grid"""
@@ -432,6 +481,10 @@ class Wall(SquareProperty):
 
 
 class Laser(Wall):
+    def __init__(self,orient,beams=1,damage=1):
+        self.orient = orient
+        self.numBeams = beams
+        self.numDamage = damage
     pass
 
 class Pusher(Wall):

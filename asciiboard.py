@@ -22,7 +22,10 @@ def getLineOneString(board,row,col):
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
     for p in square.propertyList:
-        if p.__class__.__name__ == 'Wall' and p.orient == 0:
+        if p.__class__.__name__ == 'Laser' and p.orient == 0:
+            string += "L"
+            no_wall_there = False
+        elif p.__class__.__name__ == 'Wall' and p.orient == 0:
             string += "="
             no_wall_there = False
     if no_wall_there:
@@ -42,7 +45,10 @@ def getLineTwoString(board,row,col):
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
     for p in square.propertyList:
-        if p.__class__.__name__ == 'Wall' and p.orient == 3:
+        if p.__class__.__name__ == 'Laser' and p.orient == 3:
+            string += "L"
+            no_wall_there = False
+        elif p.__class__.__name__ == 'Wall' and p.orient == 3:
             string += "["
             no_wall_there = False
     if no_wall_there:
@@ -70,7 +76,10 @@ def getLineTwoString(board,row,col):
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
     for p in square.propertyList:
-        if p.__class__.__name__ == 'Wall' and p.orient == 1:
+        if p.__class__.__name__ == 'Laser' and p.orient == 1:
+            string += "L"
+            no_wall_there = False
+        elif p.__class__.__name__ == 'Wall' and p.orient == 1:
             string += "]"
             no_wall_there = False
     if no_wall_there:
@@ -97,7 +106,10 @@ def getLineThreeString(board,row,col):
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
     for p in square.propertyList:
-        if p.__class__.__name__ == 'Wall' and p.orient == 2:
+        if p.__class__.__name__ == 'Laser' and p.orient == 2:
+            string += "L"
+            no_wall_there = False
+        elif p.__class__.__name__ == 'Wall' and p.orient == 2:
             string += "="
             no_wall_there = False
     if no_wall_there:
