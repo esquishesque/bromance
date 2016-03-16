@@ -3,8 +3,8 @@ import csv
 import random
 import asciiboard
 
-Location = namedtuple("Location", ["x","y"])
-
+Location = namedtuple("Location", ["x","y"]) # named tuple for coordinates only
+Position = namedtuple("Position", ["loc","orient"]) # named tuple for Loc + orient
 
     # def getOrient(self):
     #     return self._orient
@@ -17,16 +17,17 @@ Location = namedtuple("Location", ["x","y"])
     # orient = property(getOrient,setOrient)
 
 
-
-
 class Game:
     """Creates Robot(s), creates a Board"""
-    def __init__(self, createdRobots,flagLocList=[Location(0,2),Location(0,4)]):  # TODO generate these better with a function later
+    def __init__(self, createdRobots,
+                 flagLocList=[Location(0,2),Location(0,4)],
+                 wallPosList=[Position(Location(5,5),2),Position(Location(5,5),3)],
+                 laserPosList=[Position(Location(6,6),3),Position(Location(0,8),2)]):  # TODO generate these better with a function later
         self.numPhases = 5 # number of instruction positions (register phases)
-        self.board = Board(createdRobots,flagLocList)
         #print(self.board)
         self.deck = Deck()
         self.handSize = 9 # TODO take this from settable user input
+        self.board = Board(createdRobots,flagLocList,wallPosList,laserPosList,self.handSize)
         self.gameOverManGameOver = False
 
 
@@ -65,7 +66,7 @@ class Game:
 
         self.handleCards(phase)
         #boardMoves()
-        #lasersFire()
+        self.board.fireLasers()
         self.touchSquare()
 
     def cleanUp(self):
@@ -80,10 +81,7 @@ class Game:
                 print("Robot {} has riiiiised from the deaaaaad!".format(robot.playerName))
         for robot in self.board.turnedOnRobots: #discard all cards that aren't locked into a register phase
             # freeSlots is the number of instructions that are not locked, equal to the hand size minus the damage taken
-            freeSlots = self.handSize - robot.damage
-            # this if makes sure that you never clean up more than five instructions (so, 5 or number of free slots, whichever is less)
-            if freeSlots > robot.numInstructions:
-                freeSlots = robot.numInstructions
+            freeSlots = min(self.handSize - robot.damage, robot.numInstructions) # this if makes sure that you never clean up more than five instructions (so, 5 or number of free slots, whichever is less)
             for i in range (0,freeSlots):
                 self.deck.discard(robot.instructions.pop(i))
                 robot.instructions.insert(i,None)
@@ -117,9 +115,9 @@ class Game:
 
     def touchSquare(self):
         for robot in self.board.functionalRobots:
-            if (self.board.grid[robot.loc.y][robot.loc.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
+            if (self.board.grid[robot.y][robot.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
                 print("Old spawn is {},{}.".format(robot.spawnLoc.x, robot.spawnLoc.y))
-                robot.spawnLoc = Location(robot.loc.x,robot.loc.y) #if you're at a flag, change your spawn to be the square you're on
+                robot.spawnLoc = Location(robot.x,robot.y) #if you're at a flag, change your spawn to be the square you're on
                 print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
                 if robot.checkpoint < len(self.board.flagLocList): #prevents a robot that has won from index erroring the flagLocList
                     if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc: #if the nth flag is where you are (n = checkpoint), increase your checkpoint
@@ -127,7 +125,7 @@ class Game:
                         if robot.checkpoint == len(self.board.flagLocList):
                             print("You are Winner! Hahaha")             # TODO make an endGame() function
                 else:
-                    print("Robot has already won; probably needs to be removed from board!")
+                    print("Robot has already won; probably needs to be removed from board! (ERROR)")
             else:
                 print("Didn't clear a ball!!1")
 
@@ -142,8 +140,9 @@ class Robot:
         self.playerName = name
         #self.appearance = "R"
         self.spawnLoc = spawnLoc
-        self.loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
+        self._loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
         self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
+        self.pos = Position(self.loc,self.orient)
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
         # These are five dummy cards; later they'll get put in elsewise
         self.instructions = [None, None, None, None, None] # TODO add Nones in a loop
@@ -151,6 +150,7 @@ class Robot:
         #self.hand = [TurnCard(3,600),MoveCard(5,600),TurnCard(2,600),MoveCard(-4,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600),MoveCard(1,600),TurnCard(3,600),MoveCard(2,600)]
         self.hand = []
         self.damage = 0
+        self.laserPower = 1 #amount of damage a laser does
         self.dead = False
         self.turnedOff = False
 
@@ -185,6 +185,31 @@ class Robot:
     # every time we set orient, it will go through the function setOrient() instead
     orient = property(getOrient,setOrient)
 
+    def getX(self):
+        return self._loc.x
+
+    def setX(self,i):
+        self._loc.x = i
+
+    def getY(self):
+        return self._loc.y
+
+    def setY(self,i):
+        self._loc.y = i
+
+    x = property(getX,setX)
+    y = property(getY,setY)
+
+    def getLoc(self):
+        return self._loc
+
+    def setLoc(self,i):
+        self._loc = i
+
+    loc = property(getLoc,setLoc)
+
+
+
     def __str__(self):
         #this makes the robot's appearance reflect its orientation
         if self.orient == 0:
@@ -200,17 +225,20 @@ class Robot:
 
 
 class Board:
-    def __init__(self, robotList, flagLocList):
+    def __init__(self, robotList, flagLocList, wallPosList, laserPosList, handSize):
         """Creates a grid, and fills it with squares"""
         self.grid = []
         #list of spawn point locations, which will change as robots hit flags
         self.spawnLocList = []
         #list of flag locations, which will never change
         self.flagLocList = flagLocList
+        self.wallPosList = wallPosList
+        self.laserPosList = laserPosList
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
         self.numRows = 10
         self.numCols = 10
+        self.handSize = handSize # TODO this is shitty and hacky and we shouldn't do this
         self._livingRobots = []
         self._turnedOnRobots = []
         self._functionalRobots = []
@@ -227,12 +255,11 @@ class Board:
             for x in range(self.numCols):
                 self.grid[y].append([Square()])
 
-        # add walls to board
-        self.grid[5][5][0].addProperty(Wall(2))
-        self.grid[5][5][0].addProperty(Wall(3))
-        self.grid[6][6][0].addProperty(Laser(3))
+        for wall in self.wallPosList:
+            self.grid[wall.loc.y][wall.loc.x][0].addProperty(Wall(wall.orient))
 
-        self.laserList = []
+        for laser in self.laserPosList:
+            self.grid[laser.loc.y][laser.loc.x][0].addProperty(Laser(laser.orient))
 
         for flag in self.flagLocList:
             self.grid[flag.y][flag.x][0].addProperty(Flag())
@@ -319,7 +346,7 @@ class Board:
 
         # if, on the next square, there is a robot, return the robot
         for robot in self.getLivingRobots():
-            if robot.loc.x == nextLoc.x and robot.loc.y == nextLoc.y:
+            if robot.x == nextLoc.x and robot.y == nextLoc.y:
                 return robot
 
         # return 0
@@ -353,13 +380,13 @@ class Board:
             else:
                 break
 
-            #for robot in [x for x in self.grid[robot.loc.y][robot.loc.x] if isinstance(x,Square)]:
+            #for robot in [x for x in self.grid[robot.y][robot.x] if isinstance(x,Square)]:
                 #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
 
 
     def robotStep(self,robot,moveDirection):
-        nextObst = self.getNextObst(robot.loc.x,robot.loc.y,moveDirection)
-        nextLoc = self.getNextLoc(robot.loc.x,robot.loc.y,moveDirection)
+        nextObst = self.getNextObst(robot.x,robot.y,moveDirection)
+        nextLoc = self.getNextLoc(robot.x,robot.y,moveDirection)
         if nextObst == 0:
             self.updateRoLoc(robot,nextLoc.x,nextLoc.y)
             return True
@@ -384,15 +411,14 @@ class Board:
         #TODO implement lives
 
 
-    def damageRobot(self,robot,damagePoints):
+    def damageRobot(self,robot,damagePoints=1):
         robot.damage += damagePoints
+        print("Yowza! Robot {} got {} damajizz!".format(robot.playerName,damagePoints))
         # if we've taken all the damage we can, kill the robot
         if robot.damage >= self.handSize:
             self.killRobot(robot)
 
-        def fireLasers(self):
-
-            pass
+    def fireLasers(self):
         """
         copy list of functional robots
         for robot in that list:
@@ -404,8 +430,6 @@ class Board:
             else
                 damage getTarget() unless it's none
 
-
-
         getTarget()
             so long as getNextObst() returns 0, ask getNextObst() about getNextLoc()
             then if you have a robot, damage it!
@@ -413,8 +437,25 @@ class Board:
 
         """
 
+        for robot in self.functionalRobots:
+            target = self.getTarget(robot.x,robot.y,robot.orient)
+            if target is not None:
+                self.damageRobot(target,robot.laserPower)
 
-     def getTarget(self,x,y,orient):
+        robotHere = False #check current square to see if there's a robot here (board lasers only)
+        for laserPos in self.laserPosList:
+            for robot in self.robotList:
+                if robot.loc == laserPos.loc:
+                    # damage robot!
+                    self.damageRobot(robot)
+                    robotHere = True
+                    break
+            if not robotHere:
+                target = self.getTarget(laserPos.loc.x,laserPos.loc.y,((laserPos.orient+2) % 4))
+                if target is not None:
+                    self.damageRobot(target)
+
+    def getTarget(self,x,y,orient):
         nextObst = self.getNextObst(x,y,orient)
         nextLoc = self.getNextLoc(x,y,orient)
         while nextObst == 0:
@@ -467,7 +508,7 @@ class Flag(SquareProperty):
 class Wall(SquareProperty):
     def __init__(self,orient):
         self.orient = orient
-        #create appearnce for wall based on orientation
+        #create appearance for wall based on orientation
         if self.orient == 0:
             self.appearance = "-"
         elif self.orient == 1:
@@ -481,10 +522,10 @@ class Wall(SquareProperty):
 
 
 class Laser(Wall):
-    def __init__(self,orient,beams=1,damage=1):
+    def __init__(self,orient):
         self.orient = orient
-        self.numBeams = beams
-        self.numDamage = damage
+#        self.numBeams = beams
+#        self.numDamage = damage
     pass
 
 class Pusher(Wall):
