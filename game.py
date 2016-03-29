@@ -22,7 +22,7 @@ class Game:
     def __init__(self, createdRobots,
                  flagLocList=[Location(0,2),Location(0,4)],
                  wallPosList=[Position(Location(5,5),2),Position(Location(5,5),3)],
-                 laserPosList=[Position(Location(6,6),3),Position(Location(0,8),2)]):  # TODO generate these better with a function later
+                 laserPosList=[Position(Location(6,6),3),Position(Location(0,8),2),Position(Location(1,3),0),Position(Location(2,2),1)]):  # TODO generate these better with a function later
         self.numPhases = 5 # number of instruction positions (register phases)
         #print(self.board)
         self.deck = Deck()
@@ -115,7 +115,7 @@ class Game:
 
     def touchSquare(self):
         for robot in self.board.functionalRobots:
-            if (self.board.grid[robot.y][robot.x][0].hasProperty(Flag)): # TODO also add in wrenches 'n' shit
+            if (self.board.grid[robot.y][robot.x][0].hasComponent(Flag)): # TODO also add in wrenches 'n' shit
                 print("Old spawn is {},{}.".format(robot.spawnLoc.x, robot.spawnLoc.y))
                 robot.spawnLoc = Location(robot.x,robot.y) #if you're at a flag, change your spawn to be the square you're on
                 print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
@@ -136,12 +136,12 @@ class Game:
 class Robot:
     """Names the Robot"""
 
-    def __init__(self, name, spawnLoc):
+    def __init__(self, name, spawnLoc, spawnOrient=2):
         self.playerName = name
         #self.appearance = "R"
         self.spawnLoc = spawnLoc
         self._loc = self.spawnLoc # This SHOULD be okay for initialization, but think about it
-        self._orient = 2 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
+        self._orient = spawnOrient % 4 # MUST be a value from 0-3; 0 is North, 1 is East, 2 is South, 3 is West
         self.pos = Position(self.loc,self.orient)
         self.checkpoint = 0 # this is the last flag that the robot touched; starts at 0
         # These are five dummy cards; later they'll get put in elsewise
@@ -256,13 +256,13 @@ class Board:
                 self.grid[y].append([Square()])
 
         for wall in self.wallPosList:
-            self.grid[wall.loc.y][wall.loc.x][0].addProperty(Wall(wall.orient))
+            self.grid[wall.loc.y][wall.loc.x][0].addComponent(Wall(wall.orient))
 
         for laser in self.laserPosList:
-            self.grid[laser.loc.y][laser.loc.x][0].addProperty(Laser(laser.orient))
+            self.grid[laser.loc.y][laser.loc.x][0].addComponent(Laser(laser.orient))
 
         for flag in self.flagLocList:
-            self.grid[flag.y][flag.x][0].addProperty(Flag())
+            self.grid[flag.y][flag.x][0].addComponent(Flag())
 
 #        for robot in self.robotList:
 #            self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
@@ -322,9 +322,9 @@ class Board:
         '''
         # if, on my square, there is a wall with matching alignment, return 1 (1 means wall)
         #if self.grid[y][x][0].hasProperty(Wall):
-        for property in self.grid[y][x][0].propertyList:
-            if isinstance(property,Wall):
-                if property.orient == orient:
+        for component in self.grid[y][x][0].componentList:
+            if isinstance(component,Wall):
+                if component.orient == orient:
                     return 1
 
         #if, on the next square (gotten from getNextLoc
@@ -339,9 +339,9 @@ class Board:
         if not(self.numCols>nextLoc.x>=0 and self.numRows>nextLoc.y>=0):
             return None
 
-        for property in self.grid[nextLoc.y][nextLoc.x][0].propertyList:
-            if isinstance(property,Wall):
-                if (property.orient + 2) % 4 == orient:
+        for component in self.grid[nextLoc.y][nextLoc.x][0].componentList:
+            if isinstance(component,Wall):
+                if (component.orient + 2) % 4 == orient:
                     return 1
 
         # if, on the next square, there is a robot, return the robot
@@ -405,7 +405,7 @@ class Board:
 
     def killRobot(self,robot):
         self.updateRoLoc(robot, None, None) #(None,None) is Robot Hell
-        robot.damage = 2 #TODO czech that this is the right amount of damage
+        robot.damage = 2 #TODO czech that this is the right amount of damage that you should come back to life with
         robot.dead = True
         print("I tell you robot {} dead".format(robot.playerName))
         #TODO implement lives
@@ -476,36 +476,36 @@ class Square():
     """Creates an appearance for the square"""
     def __init__(self):
         self.appearance = "."
-        self.propertyList = []
+        self.componentList = []
 
-    def addProperty(self,property):
-        self.propertyList.append(property)
+    def addComponent(self,component):
+        self.componentList.append(component)
 
 #if we find out that there exists a real function like this, use that instead TODO test for robustness
-    def hasProperty(self,propType):
+    def hasComponent(self,compType):
         answer = False
-        for property in self.propertyList:
-            if isinstance(property, propType):
+        for component in self.componentList:
+            if isinstance(component, compType):
                 answer = True
                 break
         return answer
 
     def __str__(self):
         output = self.appearance
-        for property in self.propertyList:
-            output = output + property.appearance
+        for component in self.componentList:
+            output = output + component.appearance
         return output
 
 
-class SquareProperty():
+class SquareComponent():
     def __init__(self):
         pass
 
-class Flag(SquareProperty):
+class Flag(SquareComponent):
     def __init__(self):
         self.appearance = "F"
 
-class Wall(SquareProperty):
+class Wall(SquareComponent):
     def __init__(self,orient):
         self.orient = orient
         #create appearance for wall based on orientation

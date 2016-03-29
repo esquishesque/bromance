@@ -21,7 +21,7 @@ def getLineOneString(board,row,col):
     # wall "=" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
-    for p in square.propertyList:
+    for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 0:
             string += "L"
             no_wall_there = False
@@ -44,7 +44,7 @@ def getLineTwoString(board,row,col):
     # wall "[" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
-    for p in square.propertyList:
+    for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 3:
             string += "L"
             no_wall_there = False
@@ -75,7 +75,7 @@ def getLineTwoString(board,row,col):
     # wall "[" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
-    for p in square.propertyList:
+    for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 1:
             string += "L"
             no_wall_there = False
@@ -95,7 +95,7 @@ def getLineThreeString(board,row,col):
     # add "f" if there's a flag there
     # TODO make it be the NUMBER of the flag, instead (figure out how best to access this; loop through flagLocList?)
     no_flag_there = True
-    for p in square.propertyList:
+    for p in square.componentList:
         if p.__class__.__name__ == 'Flag':
             string += "F"
             no_flag_there = False
@@ -105,7 +105,7 @@ def getLineThreeString(board,row,col):
     # wall "=" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
-    for p in square.propertyList:
+    for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 2:
             string += "L"
             no_wall_there = False
