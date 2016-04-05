@@ -29,6 +29,7 @@ class Game:
         self.handSize = 9 # TODO take this from settable user input
         self.board = Board(createdRobots,flagLocList,wallPosList,laserPosList,self.handSize)
         self.gameOverManGameOver = False
+        self.numFlags = len(flagLocList)
 
 
     def play(self):
@@ -70,6 +71,16 @@ class Game:
         self.touchSquare()
 
     def cleanUp(self):
+        for robot in self.board.functionalRobots:
+            if (self.board.grid[robot.y][robot.x][0].hasComponent(Wrench)):
+                self.board.healRobot()
+                print("Old spawn is {},{}.".format(robot.spawnLoc.x, robot.spawnLoc.y))
+                robot.spawnLoc = Location(robot.x,robot.y) #if you're at a wrench, change your spawn to be the square you're on
+                print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
+
+            if (self.board.grid[robot.y][robot.x][0].hasComponent(Hammer)):
+                pass
+
     # take all cards back from hands and instruction sets and put them in the discard pile
         for robot in self.board.robotList:
             for i in range(0,len(robot.hand)):  #discard all cards that were dealt but haven't been assigned to register phases
@@ -119,10 +130,14 @@ class Game:
                 print("Old spawn is {},{}.".format(robot.spawnLoc.x, robot.spawnLoc.y))
                 robot.spawnLoc = Location(robot.x,robot.y) #if you're at a flag, change your spawn to be the square you're on
                 print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
-                if robot.checkpoint < len(self.board.flagLocList): #prevents a robot that has won from index erroring the flagLocList
+                if robot.checkpoint < self.numFlags: #prevents a robot that has won from index erroring the flagLocList
+                    print(self.board.grid[robot.y][robot.x][0].componentList)
+
+#                    if next(c for c in self.board.grid[robot.y][robot.x][0].componentList if type(c) is Flag).id == robot.checkpoint:
+
                     if self.board.flagLocList[robot.checkpoint] == robot.spawnLoc: #if the nth flag is where you are (n = checkpoint), increase your checkpoint
                         robot.checkpoint = robot.checkpoint+1
-                        if robot.checkpoint == len(self.board.flagLocList):
+                        if robot.checkpoint == self.numFlags:
                             print("You are Winner! Hahaha")             # TODO make an endGame() function
                 else:
                     print("Robot has already won; probably needs to be removed from board! (ERROR)")
@@ -418,6 +433,10 @@ class Board:
         if robot.damage >= self.handSize:
             self.killRobot(robot)
 
+    def healRobot(self,robot,healPoints=1):
+        robot.damage -= healPoints
+
+
     def fireLasers(self):
         """
         copy list of functional robots
@@ -502,8 +521,19 @@ class SquareComponent():
         pass
 
 class Flag(SquareComponent):
+    counter = 0
     def __init__(self):
         self.appearance = "F"
+        self.id = Flag.counter
+        Flag.counter += 1
+
+class Wrench(SquareComponent):
+    def __init__(self):
+        self.appearance = "W"
+
+class Hammer(SquareComponent):
+    def __init__(self):
+        self.appearance = "H"
 
 class Wall(SquareComponent):
     def __init__(self,orient):

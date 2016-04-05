@@ -351,8 +351,8 @@ class TestKillRobot(unittest.TestCase):
         self.assertEqual(self.robotR.damage,2)
         self.assertTrue(self.robotR.dead)
 
-class TestSelectInstructions(unittest.TestCase):
-    def setUp(self):
+# class TestSelectInstructions(unittest.TestCase):
+#     def setUp(self):
 
 
 if __name__ == '__main__':
