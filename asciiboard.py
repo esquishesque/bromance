@@ -99,7 +99,20 @@ def getLineThreeString(board,row,col):
         if p.__class__.__name__ == 'Flag':
             string += "F"
             no_flag_there = False
-    if no_flag_there:
+
+    no_hammer_there = True
+    for p in square.componentList:
+        if p.__class__.__name__ == 'Hammer':
+            string += "H"
+            no_hammer_there = False
+
+    no_wrench_there = True
+    for p in square.componentList:
+        if p.__class__.__name__ == 'Wrench':
+            string += "W"
+            no_wrench_there = False
+
+    if no_flag_there and no_hammer_there and no_wrench_there:
         string += " "
 
     # wall "=" or nothing if 

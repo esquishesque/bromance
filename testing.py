@@ -252,7 +252,7 @@ class TestHandleCards(unittest.TestCase):
 
 class TestFireLasers(unittest.TestCase):
     def setUp(self):
-        self.game = Game([Robot("R", Location(0,0),2),Robot("C", Location(2,0),0),Robot("E",Location(4,0),3)],laserPosList=[],wallPosList=[])
+        self.game = Game([Robot("R", Location(0,0),2),Robot("C", Location(2,0),0),Robot("E",Location(4,0),3)])
         self.robotR = self.game.board.robotList[0]
         self.robotC = self.game.board.robotList[1]
         self.robotE = self.game.board.robotList[2]
@@ -290,14 +290,15 @@ class TestFireLasers(unittest.TestCase):
         self.assertEqual(self.robotC.damage,0)
     def test_robotHasLasersOnBothSidesOnOwnSquare_lasersFire_twoDamageTaken(self):
         self.game.board.grid[0][0][0].addComponent(Laser(1))
-        self.game.board.laserPosList.append(Position(Location(0,0),1))
+        self.game.board.grid.laserPosList.append(Position(Location(0,0),1))
         self.game.board.grid[0][0][0].addComponent(Laser(3))
-        self.game.board.laserPosList.append(Position(Location(0,0),3))
+        self.game.board.grid.laserPosList.append(Position(Location(0,0),3))
         self.game.board.fireLasers()
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n\n",self.game.board)
         self.assertEqual(self.robotR.damage,2)
     def test_laserFacingRobotFromAfar_lasersFire_oneDamageTaken(self):
         self.game.board.grid[2][0][0].addComponent(Laser(2))
-        self.game.board.laserPosList.append(Position(Location(0,2),2))
+        self.game.board.grid.laserPosList.append(Position(Location(0,2),2))
         self.game.board.fireLasers()
         self.assertEqual(self.robotR.damage,1)
     def test_robotHasRobotsFacingFromTwoSides_lasersFire_twoDamageTaken(self):
@@ -306,7 +307,7 @@ class TestFireLasers(unittest.TestCase):
         self.assertEqual(self.robotC.damage,2)
     def test_robotHasRobotAndWallLaserFacingOnEitherSide_lasersFire_twoDamageTaken(self):
         self.game.board.grid[0][2][0].addComponent(Laser(3))
-        self.game.board.laserPosList.append(Position(Location(2,0),3))
+        self.game.board.grid.laserPosList.append(Position(Location(2,0),3))
         self.game.board.fireLasers()
         print(self.game.board)
         self.assertEqual(self.robotC.damage,2)
@@ -347,7 +348,7 @@ class TestKillRobot(unittest.TestCase):
         self.robotR = self.game.board.robotList[0]
     def test_aliveRobot_killRobot_robotDeadInRobotHellWithTwoDamage(self):
         self.game.board.killRobot(self.robotR)
-        self.assertEqual(self.robotR.loc,(None,None))
+        self.assertEqual(self.robotR.loc,Location(None,None))
         self.assertEqual(self.robotR.damage,2)
         self.assertTrue(self.robotR.dead)
 

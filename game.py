@@ -2,9 +2,18 @@ from collections import namedtuple
 import csv
 import random
 import asciiboard
-
+import pickle
+from squares import *
+#from grid import Grid, Location, Position
+from serialize_objects import readGridFromFile
+from grid import *
+'''
 Location = namedtuple("Location", ["x","y"]) # named tuple for coordinates only
 Position = namedtuple("Position", ["loc","orient"]) # named tuple for Loc + orient
+'''
+
+
+
 
     # def getOrient(self):
     #     return self._orient
@@ -21,13 +30,12 @@ class Game:
     """Creates Robot(s), creates a Board"""
     def __init__(self, createdRobots,
                  flagLocList=[Location(0,2),Location(0,4)],
-                 wallPosList=[Position(Location(5,5),2),Position(Location(5,5),3)],
-                 laserPosList=[Position(Location(6,6),3),Position(Location(0,8),2),Position(Location(1,3),0),Position(Location(2,2),1)]):  # TODO generate these better with a function later
+                ):  # TODO generate these better with a function later
         self.numPhases = 5 # number of instruction positions (register phases)
         #print(self.board)
         self.deck = Deck()
         self.handSize = 9 # TODO take this from settable user input
-        self.board = Board(createdRobots,flagLocList,wallPosList,laserPosList,self.handSize)
+        self.board = Board(createdRobots,flagLocList,self.handSize)
         self.gameOverManGameOver = False
         self.numFlags = len(flagLocList)
 
@@ -238,21 +246,24 @@ class Robot:
         else:                           # TODO should throw exception
             print ("Unexpected value in robot.__str__")
 
-
 class Board:
-    def __init__(self, robotList, flagLocList, wallPosList, laserPosList, handSize):
+    def __init__(self, robotList, flagLocList, handSize, gridFilename="factory.pik"): #TODO take name later
         """Creates a grid, and fills it with squares"""
-        self.grid = []
+        self.numCols = 10
+        self.numRows = 10
+        self.grid = readGridFromFile(gridFilename) #TODO make grid selection better
+
+
+
         #list of spawn point locations, which will change as robots hit flags
         self.spawnLocList = []
         #list of flag locations, which will never change
         self.flagLocList = flagLocList
-        self.wallPosList = wallPosList
-        self.laserPosList = laserPosList
+        # self.wallPosList = wallPosList
+        # self.laserPosList = laserPosList
         #if we don't add robot list into the initializer, we can't use it later
         self.robotList = robotList
-        self.numRows = 10
-        self.numCols = 10
+
         self.handSize = handSize # TODO this is shitty and hacky and we shouldn't do this
         self._livingRobots = []
         self._turnedOnRobots = []
@@ -265,22 +276,27 @@ class Board:
         # self.flagLocList.append(tempFlagPointTwo)
 
         # fill a grid representing a 10x10 board with Squares
-        for y in range(self.numRows):
-            self.grid.append([])
-            for x in range(self.numCols):
-                self.grid[y].append([Square()])
+        # for y in range(self.numRows):
+        #     self.grid.append([])
+        #     for x in range(self.numCols):
+        #         self.grid[y].append([Square()])
 
-        for wall in self.wallPosList:
-            self.grid[wall.loc.y][wall.loc.x][0].addComponent(Wall(wall.orient))
-
-        for laser in self.laserPosList:
-            self.grid[laser.loc.y][laser.loc.x][0].addComponent(Laser(laser.orient))
+        # for wall in self.wallPosList:
+        #     self.grid[wall.loc.y][wall.loc.x][0].addComponent(Wall(wall.orient))
+        #
+        # for laser in self.laserPosList:
+        #     self.grid[laser.loc.y][laser.loc.x][0].addComponent(Laser(laser.orient))
 
         for flag in self.flagLocList:
             self.grid[flag.y][flag.x][0].addComponent(Flag())
 
 #        for robot in self.robotList:
 #            self.grid[robot.spawnLoc.y][robot.spawnLoc.x][0].addProperty(Spawn())
+
+    # def readGridFromFile(name):
+    #     with open (name, 'rb') as f:
+    #         grid = pickle.load(f)
+    #     return grid
 
     def getLivingRobots(self): # return only robots that are not dead (i.e., alive)
         self._livingRobots = []
@@ -462,7 +478,7 @@ class Board:
                 self.damageRobot(target,robot.laserPower)
 
         robotHere = False #check current square to see if there's a robot here (board lasers only)
-        for laserPos in self.laserPosList:
+        for laserPos in self.grid.laserPosList:
             for robot in self.robotList:
                 if robot.loc == laserPos.loc:
                     # damage robot!
@@ -491,79 +507,7 @@ class Board:
         return asciiboard.printAsciiBoard(self)
 
 
-class Square():
-    """Creates an appearance for the square"""
-    def __init__(self):
-        self.appearance = "."
-        self.componentList = []
 
-    def addComponent(self,component):
-        self.componentList.append(component)
-
-#if we find out that there exists a real function like this, use that instead TODO test for robustness
-    def hasComponent(self,compType):
-        answer = False
-        for component in self.componentList:
-            if isinstance(component, compType):
-                answer = True
-                break
-        return answer
-
-    def __str__(self):
-        output = self.appearance
-        for component in self.componentList:
-            output = output + component.appearance
-        return output
-
-
-class SquareComponent():
-    def __init__(self):
-        pass
-
-class Flag(SquareComponent):
-    counter = 0
-    def __init__(self):
-        self.appearance = "F"
-        self.id = Flag.counter
-        Flag.counter += 1
-
-class Wrench(SquareComponent):
-    def __init__(self):
-        self.appearance = "W"
-
-class Hammer(SquareComponent):
-    def __init__(self):
-        self.appearance = "H"
-
-class Wall(SquareComponent):
-    def __init__(self,orient):
-        self.orient = orient
-        #create appearance for wall based on orientation
-        if self.orient == 0:
-            self.appearance = "-"
-        elif self.orient == 1:
-            self.appearance = "]"
-        elif self.orient == 2:
-            self.appearance = "_"
-        elif self.orient == 3:
-            self.appearance = "["
-        else:                           # TODO should throw exception
-            print ("Unexpected value in Wall.appearance")
-
-
-class Laser(Wall):
-    def __init__(self,orient):
-        self.orient = orient
-#        self.numBeams = beams
-#        self.numDamage = damage
-    pass
-
-class Pusher(Wall):
-    pass
-
-#class Spawn(SquareProperty):
-#    def __init__(self):
-#        self.appearance = "S"
 
 
 class Card():
