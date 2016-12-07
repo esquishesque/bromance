@@ -139,7 +139,7 @@ class Game:
                 robot.spawnLoc = Location(robot.x,robot.y) #if you're at a flag, change your spawn to be the square you're on
                 print("New spawn is {},{}.".format(robot.spawnLoc.x,robot.spawnLoc.y))
                 if robot.checkpoint < self.numFlags: #prevents a robot that has won from index erroring the flagLocList
-                    print(self.board.grid[robot.y][robot.x][0].componentList)
+                    # print(self.board.grid[robot.y][robot.x][0].componentList)
 
 #                    if next(c for c in self.board.grid[robot.y][robot.x][0].componentList if type(c) is Flag).id == robot.checkpoint:
 
@@ -249,10 +249,10 @@ class Robot:
 class Board:
     def __init__(self, robotList, flagLocList, handSize, gridFilename="factory.pik"): #TODO take name later
         """Creates a grid, and fills it with squares"""
-        self.numCols = 10
-        self.numRows = 10
-        self.grid = readGridFromFile(gridFilename) #TODO make grid selection better
 
+        self.grid = readGridFromFile(gridFilename)
+        self.numRows = len(self.grid)
+        self.numCols = len(self.grid[0])
 
 
         #list of spawn point locations, which will change as robots hit flags
@@ -331,8 +331,6 @@ class Board:
 
     # Does calculus to figure out coordinates of next square given direction you want to move
     def getNextLoc(self,x,y,orient):
-
-
         if orient == 0: # facing north, subtract from y
             y=y-1
         elif orient == 1: # facing east, add to x
@@ -359,10 +357,10 @@ class Board:
                     return 1
 
         #if, on the next square (gotten from getNextLoc
-        # (which might give None in which case we should return None probably?), presumably), there is a wall with opposite alignment ((i+2)%4), return 1
+        # (which might give None in which case we should return None probably?), presumably), there is a wall with
+        # opposite alignment ((i+2)%4), return 1
         #if self.getNextLoc(x,y,orient) == None:
         #    return None
-
 
         nextLoc = self.getNextLoc(x,y,orient)
 
@@ -377,7 +375,8 @@ class Board:
 
         # if, on the next square, there is a robot, return the robot
         for robot in self.getLivingRobots():
-            if robot.x == nextLoc.x and robot.y == nextLoc.y:
+            # if robot.x == nextLoc.x and robot.y == nextLoc.y: # (robot.x,robot.y)==(nextLoc.x,nextLoc.y) # chris hates this line
+            if (robot.x,robot.y)==(nextLoc.x,nextLoc.y):
                 return robot
 
         # return 0

@@ -51,8 +51,8 @@ class Grid(list):
 def generateGrid():
     numRows = 10
     numCols = 10
-    wallList = [[5,5,2],[5,5,3]] #TODO probably repackage these to be ((x,y),o) rather than [x,y,o]
-    laserList = [[6,6,3],[0,8,2],[1,3,0],[2,2,1]]
+    wallList = [] #[[5,5,2],[5,5,3]] #TODO probably repackage these to be ((x,y),o) rather than [x,y,o]
+    laserList = [] #[[6,6,3],[0,8,2],[1,3,0],[2,2,1]]
 
 
     grid = Grid(numRows, numCols)
@@ -60,10 +60,13 @@ def generateGrid():
     for wall in wallList:
         grid[wall[1]][wall[0]][0].addComponent(Wall(wall[2]))
 
-
     for laser in laserList:
         grid[laser[1]][laser[0]][0].addComponent(Laser(laser[2]))
         grid.laserPosList.append(Position(Location(laser[0],laser[1]),laser[2]))
+
+    #hacky shit
+    grid[2][4][0].addComponent(Wrench())
+    grid[3][1][0].addComponent(Hammer())
 
     return grid
 
