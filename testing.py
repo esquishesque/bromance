@@ -87,6 +87,20 @@ class TestCleanUp(unittest.TestCase):
         self.game.cleanUp()
         self.assertIs(cardBeforeCleanUp, robot.instructions[-1])  # locked card from before cleanUp() has stuck around
 
+    def test_robotWithOneDamage_endsTurnOnWrench_robotHasZeroDamage(self):
+        #put a wrench on the board and put a robot on it
+        self.game.board.grid[5][5][0].addComponent(Wrench())
+        robot = self.game.board.robotList[0]
+        robot.loc = Location(5,5)
+
+        #damage the robot 1
+        robot.damage = 1
+
+        self.game.cleanUp()
+
+        #assert robot damage is zero
+        self.assertEqual(robot.damage, 0)
+
 
 class TestRobotTurn(unittest.TestCase):
     def setUp(self):
@@ -235,6 +249,15 @@ class TestTouchSquare(unittest.TestCase):
         self.assertEqual(originalCheckpoint, self.robotR.checkpoint)
         self.assertEqual(self.robotR.spawnLoc, self.flagTwo)
 
+    def test_robot_touchWrench_spawnButNotCheckpointUpdate(self):
+        self.game.board.grid[5][5][0].addComponent(Wrench())
+        originalCheckpoint = self.robotR.checkpoint
+        self.robotR.loc = Location(5, 5)
+        self.game.touchSquare()
+        self.assertEqual(originalCheckpoint, self.robotR.checkpoint)
+        self.assertEqual(self.robotR.spawnLoc, Location(5,5))
+
+
 
 class TestHandleCards(unittest.TestCase):
     def setUp(self):
@@ -270,7 +293,6 @@ class TestFireLasers(unittest.TestCase):
     #     self.game.board.fireLasers()
     #     self.assertEqual(self.robotR.damage,0)
 
-    # fixme borken
     def test_threeRobotsInARow_thirdShootsWest_onlySecondTakesDamage(self):
         self.game.board.fireLasers()
         #print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n\n", self.game.board)
@@ -278,7 +300,6 @@ class TestFireLasers(unittest.TestCase):
         self.assertEqual(self.robotE.damage, 0)
         self.assertEqual(self.robotC.damage, 1)
 
-    # fixme borken
     def test_threeRobotsInARowAllFacingWest_allShootWest_westmostAndMiddleTakeDamage(self):
         self.robotR.orient = 3
         self.robotC.orient = 3
@@ -308,7 +329,6 @@ class TestFireLasers(unittest.TestCase):
         self.game.board.fireLasers()
         self.assertEqual(self.robotC.damage, 0)
 
-    # fixme borken
     def test_robotHasLasersOnBothSidesOnOwnSquare_lasersFire_twoDamageTaken(self):
         self.game.board.grid[0][0][0].addComponent(Laser(1))
         self.game.board.grid.laserPosList.append(Position(Location(0, 0), 1))
