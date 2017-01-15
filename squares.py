@@ -16,6 +16,13 @@ class Square():
                 break
         return answer
 
+    def getComponents(self,compType):
+        answer = []
+        for component in self.componentList:
+            if isinstance(component, compType):
+                answer.append(component)
+        return answer
+
     def __str__(self):
         output = self.appearance
         for component in self.componentList:
@@ -67,6 +74,19 @@ class Laser(Wall):
 
 class Pusher(Wall):
     pass
+
+class Conveyor(SquareComponent):
+    def __init__(self,orient,enspinment):
+        self.orient = orient
+        self.enspinment = enspinment
+
+class ExpressConveyor(Conveyor):
+    pass
+
+class Gear(SquareComponent):
+    def __init__(self,enspinment):
+        self.numSteps = enspinment
+
 
 #class Spawn(SquareProperty):
 #    def __init__(self):

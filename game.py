@@ -44,10 +44,10 @@ class Game:
         while(self.gameOverManGameOver==False):
             self.executeTurn()
 
+
     def executeTurn(self):
 
         self.dealHands()
-
 
         for robot in self.board.turnedOnRobots:
             print("current board:\n{}".format(self.board))
@@ -55,8 +55,6 @@ class Game:
 
         for phase in range(0,self.numPhases):
             self.executePhase(phase)
-
-
 
         self.cleanUp()
 
@@ -74,9 +72,36 @@ class Game:
     # grab one phase at a time and pass them to handleCards
 
         self.handleCards(phase)
-        #boardMoves()
+        self.boardMoves()
         self.board.fireLasers()
         self.touchSquare()
+
+
+    def boardMoves(self):
+        for robot in self.board.livingRobots:
+            expressConveyors = self.board.grid[robot.y][robot.x][0].getComponents(ExpressConveyor)
+            if len(expressConveyors)<0:
+                self.board.robotStep(robot,expressConveyors[0].orient)
+                if not robot.dead:
+                    conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
+                    if len(conveyors)<0:
+                        self.board.robotTurn(robot,conveyors[0].enspinment)
+
+        for robot in self.board.livingRobots:
+            conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
+            if len(conveyors)<0:
+                self.board.robotStep(robot,conveyors[0].orient)
+                if not robot.dead:
+                    conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
+                    if len(conveyors)<0:
+                        self.board.robotTurn(robot,conveyors[0].enspinment)
+
+        for robot in self.board.livingRobots:
+            gears = self.board.grid[robot.y][robot.x][0].getComponents(Gear)
+            if len(gears)<0:
+                self.board.robotStep(robot,gears[0].enspinment)
+
+
 
     def cleanUp(self):
         for robot in self.board.functionalRobots:
@@ -400,6 +425,7 @@ class Board:
                 self.robotStep(robot,moveDirection)
             else:
                 break
+
 
             #for robot in [x for x in self.grid[robot.y][robot.x] if isinstance(x,Square)]:
                 #any(isinstance(x,Square) for x in game.board.grid[-100][-100]) TODO continue being pleased that we figured this out even though we're not using it
