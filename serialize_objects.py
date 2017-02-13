@@ -6,5 +6,5 @@ def readGridFromFile(name):
     return grid
 
 def writeGridToFile(grid):
-    with open('factory.pik', 'wb') as f:
+    with open('conveyors_testing_factory.pik', 'wb') as f:
         dill.dump(grid, f)

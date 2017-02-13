@@ -1,6 +1,45 @@
 from game import *
 # Print the board in a nice ASCII format
 
+# dict of (orient (int), enspinment (int), is_express (bool)) tuples to appearances
+conveyorAppearances = {
+    # non-turning regular
+    (0,0,False): "↑",
+    (1,0,False): "→",
+    (2,0,False): "↓",
+    (3,0,False): "←",
+
+    # right-turning regular
+    (0,1,False): "⥜",
+    (1,1,False): "⥟",
+    (2,1,False): "⥡",
+    (3,1,False): "⥚",
+
+    # left-turning regular
+    (0,-1,False): "⥠",
+    (1,-1,False): "⥛",
+    (2,-1,False): "⥝",
+    (3,-1,False): "⥞",
+
+    # non-turning express
+    (0,0,True): "⤒",
+    (1,0,True): "⇥",
+    (2,0,True): "⤓",
+    (3,0,True): "⇤",
+
+    # right-turning express
+    (0,1,True): "⥔",
+    (1,1,True): "⥗",
+    (2,1,True): "⥙",
+    (3,1,True): "⥒",
+
+    # left-turning express
+    (0,-1,True): "⥘",
+    (1,-1,True): "⥓",
+    (2,-1,True): "⥙",
+    (3,-1,True): "⥖",
+}
+
 def rowSepString(board):
     return "+---" * len(board.grid) + "+" + "\n"
 
@@ -21,6 +60,7 @@ def getLineOneString(board,row,col):
     # wall "=" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
+    conveyorOrGear = " "
     for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 0:
             string += "L"
@@ -28,11 +68,23 @@ def getLineOneString(board,row,col):
         elif p.__class__.__name__ == 'Wall' and p.orient == 0:
             string += "="
             no_wall_there = False
+        if p.__class__.__name__ == 'Conveyor':
+            conveyorOrGear = conveyorAppearances[(p.orient, p.enspinment, False)]
+        elif p.__class__.__name__ == 'ExpressConveyor':
+            conveyorOrGear = conveyorAppearances[(p.orient, p.enspinment, True)]
+        elif p.__class__.__name__ == 'Gear':
+            if p.enspinment == 1:
+                conveyorOrGear = "⟳"
+            elif p.enspinment == -1:
+                conveyorOrGear = "⟲"
+            else:
+                raise Exception("Unknown enspinment for gear ({})".format(p.enspinment))
     if no_wall_there:
         string += " "
 
     # TODO: make this conveyor belt ("nesw"/"NESW" for regular/express); for no just blank!
-    string += " "
+    # TODIDN'T: that doesn't allow us to have turns, so we did this instead!
+    string += conveyorOrGear
 
     return string
 

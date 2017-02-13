@@ -85,7 +85,7 @@ class ExpressConveyor(Conveyor):
 
 class Gear(SquareComponent):
     def __init__(self,enspinment):
-        self.numSteps = enspinment
+        self.enspinment = enspinment
 
 
 #class Spawn(SquareProperty):

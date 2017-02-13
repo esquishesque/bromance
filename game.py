@@ -263,7 +263,7 @@ class Robot:
             print ("Unexpected value in robot.__str__")
 
 class Board:
-    def __init__(self, robotList, flagLocList, handSize, gridFilename="factory.pik"): #TODO take name later
+    def __init__(self, robotList, flagLocList, handSize, gridFilename="conveyors_testing_factory.pik"): #TODO take name later
         """Creates a grid, and fills it with squares"""
 
         self.grid = readGridFromFile(gridFilename)

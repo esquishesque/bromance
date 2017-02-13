@@ -51,8 +51,35 @@ class Grid(list):
 def generateGrid():
     numRows = 10
     numCols = 10
-    wallList = [] #[[5,5,2],[5,5,3]] #TODO probably repackage these to be ((x,y),o) rather than [x,y,o]
-    laserList = [] #[[6,6,3],[0,8,2],[1,3,0],[2,2,1]]
+    wallList = [[8,4,2]] #[[5,5,2],[5,5,3]] #TODO probably repackage these to be ((x,y),o) rather than [x,y,o]
+    laserList = [[9,6,1]] #[[6,6,3],[0,8,2],[1,3,0],[2,2,1]]
+    conveyorList = [[5,0,3,0],
+                    [6,0,3,0],
+                    [6,2,0,0],
+                    [6,3,0,0],
+                    [8,3,2,0],
+                    [8,4,2,0],
+                    [2,5,2,0],
+                    [2,6,2,0],
+                    [2,7,2,-1],
+                    [3,7,1,0],
+                    [8,6,2,0],
+                    [9,7,2,0],
+                    [9,8,2,0],
+                    [9,9,2,0]]
+
+    expressConveyorList = [[4,5,1,0],
+                           [5,5,1,0],
+                           [6,5,1,1],
+                           [6,6,2,0],
+                           [6,7,1,0],
+                           [7,7,1,0],
+                           [8,7,1,0],
+                           [7,9,1,0]]
+
+    gearList = [[6,1,1],
+                [4,3,-1],
+                [3,3,1]]
 
 
     grid = Grid(numRows, numCols)
@@ -63,6 +90,15 @@ def generateGrid():
     for laser in laserList:
         grid[laser[1]][laser[0]][0].addComponent(Laser(laser[2]))
         grid.laserPosList.append(Position(Location(laser[0],laser[1]),laser[2]))
+
+    for gear in gearList:
+            grid[gear[1]][gear[0]][0].addComponent(Gear(gear[2]))
+
+    for conveyor in conveyorList:
+            grid[conveyor[1]][conveyor[0]][0].addComponent(Conveyor(conveyor[2],conveyor[3]))
+
+    for expressConveyor in expressConveyorList:
+            grid[expressConveyor[1]][expressConveyor[0]][0].addComponent(ExpressConveyor(expressConveyor[2],expressConveyor[3]))
 
     #hacky shit
     grid[2][4][0].addComponent(Wrench())
