@@ -1,6 +1,6 @@
 import unittest
-from game import *
-
+from game import Game, Robot, Board, Wall, Wrench, Hammer, MoveCard, Laser
+from grid import Grid, Location, Position
 
 # import mock
 
@@ -258,7 +258,6 @@ class TestTouchSquare(unittest.TestCase):
         self.assertEqual(self.robotR.spawnLoc, Location(5,5))
 
 
-
 class TestHandleCards(unittest.TestCase):
     def setUp(self):
         self.game = Game([Robot("R", Location(2, 1)), Robot("C", Location(1, 1))])
@@ -329,7 +328,7 @@ class TestFireLasers(unittest.TestCase):
         self.game.board.fireLasers()
         self.assertEqual(self.robotC.damage, 0)
 
-    def test_robotHasLasersOnBothSidesOnOwnSquare_lasersFire_twoDamageTaken(self):
+    def test_robotHasLasersOnBothSidesOnOwnSquare_fireLasers_twoDamageTaken(self):
         self.game.board.grid[0][0][0].addComponent(Laser(1))
         self.game.board.grid.laserPosList.append(Position(Location(0, 0), 1))
         self.game.board.grid[0][0][0].addComponent(Laser(3))
@@ -338,22 +337,22 @@ class TestFireLasers(unittest.TestCase):
         #print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n\n", self.game.board)
         self.assertEqual(self.robotR.damage, 2)
 
-    def test_laserFacingRobotFromAfar_lasersFire_oneDamageTaken(self):
+    def test_laserFacingRobotFromAfar_fireLasers_oneDamageTaken(self):
         self.game.board.grid[2][0][0].addComponent(Laser(2))
         self.game.board.grid.laserPosList.append(Position(Location(0, 2), 2))
         self.game.board.fireLasers()
         self.assertEqual(self.robotR.damage, 1)
 
-    def test_robotHasRobotsFacingFromTwoSides_lasersFire_twoDamageTaken(self):
+    def test_robotHasRobotsFacingFromTwoSides_fireLasers_twoDamageTaken(self):
         self.robotR.orient = 1
         self.game.board.fireLasers()
         self.assertEqual(self.robotC.damage, 2)
 
-    def test_robotHasRobotAndWallLaserFacingOnEitherSide_lasersFire_twoDamageTaken(self):
+    def test_robotHasRobotAndWallLaserFacingOnEitherSide_fireLasers_twoDamageTaken(self):
         self.game.board.grid[0][2][0].addComponent(Laser(3))
         self.game.board.grid.laserPosList.append(Position(Location(2, 0), 3))
         self.game.board.fireLasers()
-        print(self.game.board)
+        #print(self.game.board)
         self.assertEqual(self.robotC.damage, 2)
 
 
@@ -403,6 +402,277 @@ class TestKillRobot(unittest.TestCase):
         self.assertEqual(self.robotR.loc, Location(None, None))
         self.assertEqual(self.robotR.damage, 2)
         self.assertTrue(self.robotR.dead)
+
+class TestBoardMoves(unittest.TestCase):
+    def setUp(self):
+        self.game = Game([Robot("R", Location(2, 1))],gridFileName="conveyors_testing_factory.pik")
+        self.robotR = self.game.board.robotList[0]
+
+    def test_robot_stepsOntoRightTurningGear_turnsRight(self):
+        self.robotR.loc = Location(2,3)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(3,3))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoLeftTurningGear_turnsLeft(self):
+        self.robotR.loc = Location(2,3)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,2)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(4,3))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_stepsOntoConveyorFacingIt_pushedBackOffToInFrontOfConveyors(self):
+        self.robotR.loc = Location(4,0)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(4,0))
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_takesTwoStepsOntoMiddleOfConveyor_pushedBackOntoConveyorThatWasOriginallyRightInItsFace(self):
+        self.robotR.loc = Location(4,0)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,2)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(5,0))
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_takesThreeStepsAcrossConveyor_staysPut(self):
+        self.robotR.loc = Location(4,0)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,3)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(7,0))
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_stepsOntoConveyorSideways_pushedOntoGearAndTurned(self):
+        self.robotR.loc = Location(7,2)
+        self.robotR.orient = 3
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(6,1))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_stepsOntoConveyorThatFacesWall_robotDontGoNowhere(self):
+        self.robotR.loc = Location(9,4)
+        self.robotR.orient = 3
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(8,4))
+        self.assertEqual(self.robotR.orient, 3)
+        self.assertEqual(self.robotR.damage, 0)
+        
+    def test_robot_stepsOntoConveyor_getsMovedIntoLaserAndTakesOneDamage(self):
+        self.robotR.loc = Location(2,4)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(2,6))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 1)
+        
+    def test_robot_stepsOntoConveyorWithLaser_pushedToSafetyAndTurned(self):
+        self.robotR.loc = Location(1,6)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(2,7))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoTurningConveyor_pushedButNotTurned(self):
+        self.robotR.loc = Location(1,7)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        # self.assertEqual(self.robotR.loc, Location(3,7))
+        self.assertEqual(self.robotR.x,3)
+        self.assertEqual(self.robotR.y,7)
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoTurningConveyorCrossingLaser_pushedButNotTurnedOrDamaged(self):
+        self.robotR.loc = Location(2,4)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,3)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(3,7))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoExpressConveyor_movedTwoAndTurned(self):
+        self.robotR.loc = Location(3,5)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(6,5))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoExpressConveyor_pushedBackwardAndTurned(self):
+        self.robotR.loc = Location(7,5)
+        self.robotR.orient = 3
+        self.game.board.robotMove(self.robotR,3)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(6,5))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoExpressConveyor_movedTwoTurnedAndEndsUpInLazorFireBamDamajizz(self):
+        self.robotR.loc = Location(5,4)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(6,6))
+        self.assertEqual(self.robotR.orient, 3)
+        self.assertEqual(self.robotR.damage, 1)
+
+    def test_robot_stepsOntoExpressConveyor_pushedTwoOntoAnotherExpressConveyor(self):
+        self.robotR.loc = Location(6,4)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(6,7))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoExpressConveyor_pushedOntoAnotherExpressConveyorAndMovedByThatConveyor(self):
+        self.robotR.loc = Location(5,6)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(7,7))
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoConveyor_pushedOntoExpressConveyorButDoesNotMoveFurther(self):
+        self.robotR.loc = Location(7,6)
+        self.robotR.orient = 1
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(8,7))
+        self.assertEqual(self.robotR.orient, 1)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_backsIntoLaserNearConveyors_notMovedButDamaged(self):
+        self.robotR.loc = Location(9,5)
+        self.robotR.orient = 0
+        self.game.board.robotMove(self.robotR,-1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(9,6))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 1)
+
+    def test_robot_backsThroughLaserOntoConveyor_movedButNotDamaged(self):
+        self.robotR.loc = Location(9,5)
+        self.robotR.orient = 0
+        self.game.board.robotMove(self.robotR,-2)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(9,8))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoExpressConveyor_dumpedOntoConveyorAndMovedAgain(self):
+        self.robotR.loc = Location(8,8)
+        self.robotR.orient = 0
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(9,8))
+        self.assertEqual(self.robotR.orient, 0)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robot_stepsOntoOneSquareExpressConveyor_movesOne(self):
+        self.robotR.loc = Location(7,8)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(8,9))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robotOnConveyor_movesOneAlongConveyor_movedAnotherOneByConveyor(self):
+        self.robotR.loc = Location(9,7)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(9,9))
+        self.assertEqual(self.robotR.orient, 2)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robotOnConveyor_turnsOne_movedOneSideways(self):
+        self.robotR.loc = Location(9,7)
+        self.robotR.orient = 2
+        self.game.board.robotTurn(self.robotR,1)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertEqual(self.robotR.loc, Location(9,8))
+        self.assertEqual(self.robotR.orient, 3)
+        self.assertEqual(self.robotR.damage, 0)
+
+    def test_robotOnConveyor_movesTwoAlongConveyorToSpaceOnEdgeOfWorld_DiesSadFace(self):
+        self.robotR.loc = Location(9,7)
+        self.robotR.orient = 2
+        self.game.board.robotMove(self.robotR,2)
+        self.game.boardMoves()
+        print(self.game.board)
+        self.game.board.fireLasers()
+        self.assertTrue(self.robotR.dead)
+
+
 
 
 # class TestSelectInstructions(unittest.TestCase):

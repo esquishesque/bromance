@@ -28,14 +28,16 @@ Position = namedtuple("Position", ["loc","orient"]) # named tuple for Loc + orie
 
 class Game:
     """Creates Robot(s), creates a Board"""
-    def __init__(self, createdRobots,
+    def __init__(self,
+                 createdRobots,
                  flagLocList=[Location(0,2),Location(0,4)],
+                 gridFileName="conveyors_testing_factory.pik"
                 ):  # TODO generate these better with a function later
         self.numPhases = 5 # number of instruction positions (register phases)
         #print(self.board)
         self.deck = Deck()
         self.handSize = 9 # TODO take this from settable user input
-        self.board = Board(createdRobots,flagLocList,self.handSize)
+        self.board = Board(createdRobots,flagLocList,self.handSize,gridFileName)
         self.gameOverManGameOver = False
         self.numFlags = len(flagLocList)
 
@@ -80,26 +82,28 @@ class Game:
     def boardMoves(self):
         for robot in self.board.livingRobots:
             expressConveyors = self.board.grid[robot.y][robot.x][0].getComponents(ExpressConveyor)
-            if len(expressConveyors)<0:
-                self.board.robotStep(robot,expressConveyors[0].orient)
+            if len(expressConveyors)>0:
+                #push the robot in the direction equal to orient + enspinment
+                #(this is because turning conveyors have an orient reflecting their original direction)
+                self.board.robotStep(robot,(expressConveyors[0].orient+expressConveyors[0].enspinment))
                 if not robot.dead:
                     conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
-                    if len(conveyors)<0:
+                    if len(conveyors)>0:
                         self.board.robotTurn(robot,conveyors[0].enspinment)
 
         for robot in self.board.livingRobots:
             conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
-            if len(conveyors)<0:
-                self.board.robotStep(robot,conveyors[0].orient)
+            if len(conveyors)>0:
+                self.board.robotStep(robot,(conveyors[0].orient+conveyors[0].enspinment))
                 if not robot.dead:
                     conveyors = self.board.grid[robot.y][robot.x][0].getComponents(Conveyor)
-                    if len(conveyors)<0:
+                    if len(conveyors)>0:
                         self.board.robotTurn(robot,conveyors[0].enspinment)
 
         for robot in self.board.livingRobots:
             gears = self.board.grid[robot.y][robot.x][0].getComponents(Gear)
-            if len(gears)<0:
-                self.board.robotStep(robot,gears[0].enspinment)
+            if len(gears)>0:
+                self.board.robotTurn(robot,gears[0].enspinment)
 
 
 
@@ -471,6 +475,7 @@ class Board:
 
     def fireLasers(self):
         """
+        #for robot lasers:
         copy list of functional robots
         for robot in that list:
             damage getTarget() unless it's none

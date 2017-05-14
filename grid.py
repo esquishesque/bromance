@@ -1,7 +1,5 @@
 from collections import namedtuple
 from squares import *
-import serialize_objects as so
-
 
 # Location = namedtuple("Location", ["x","y"]) # named tuple for coordinates only
 # Position = namedtuple("Position", ["loc","orient"]) # named tuple for Loc + orient
@@ -105,11 +103,6 @@ def generateGrid():
     grid[3][1][0].addComponent(Hammer())
 
     return grid
-
-
-if __name__ == "__main__":
-    grid = generateGrid()
-    so.writeGridToFile(grid)
 
 
     #pickle grid
