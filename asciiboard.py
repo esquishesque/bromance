@@ -60,7 +60,10 @@ def getLineOneString(board,row,col):
     # wall "=" or nothing if 
     # TODO in future: instead make it "L" for laser or "P" for pusher, if it's that instead
     no_wall_there = True
-    conveyorOrGear = " "
+    no_hammer_there = True
+    no_wrench_there = True
+    upperRightCorner = " "
+
     for p in square.componentList:
         if p.__class__.__name__ == 'Laser' and p.orient == 0:
             string += "L"
@@ -68,23 +71,33 @@ def getLineOneString(board,row,col):
         elif p.__class__.__name__ == 'Wall' and p.orient == 0:
             string += "="
             no_wall_there = False
+
         if p.__class__.__name__ == 'Conveyor':
-            conveyorOrGear = conveyorAppearances[(p.orient, p.enspinment, False)]
+            upperRightCorner = conveyorAppearances[(p.orient, p.enspinment, False)]
         elif p.__class__.__name__ == 'ExpressConveyor':
-            conveyorOrGear = conveyorAppearances[(p.orient, p.enspinment, True)]
+            upperRightCorner = conveyorAppearances[(p.orient, p.enspinment, True)]
         elif p.__class__.__name__ == 'Gear':
             if p.enspinment == 1:
-                conveyorOrGear = "⟳"
+                upperRightCorner = "⟳"
             elif p.enspinment == -1:
-                conveyorOrGear = "⟲"
+                upperRightCorner = "⟲"
             else:
                 raise Exception("Unknown enspinment for gear ({})".format(p.enspinment))
+
+        if p.__class__.__name__ == 'Hammer':
+            upperRightCorner = "H"
+            no_hammer_there = False
+
+        if p.__class__.__name__ == 'Wrench':
+            upperRightCorner = "W"
+            no_wrench_there = False
+
     if no_wall_there:
         string += " "
 
     # TODO: make this conveyor belt ("nesw"/"NESW" for regular/express); for no just blank!
     # TODIDN'T: that doesn't allow us to have turns, so we did this instead!
-    string += conveyorOrGear
+    string += upperRightCorner
 
     return string
 
@@ -151,20 +164,7 @@ def getLineThreeString(board,row,col):
         if p.__class__.__name__ == 'Flag':
             string += "F"
             no_flag_there = False
-
-    no_hammer_there = True
-    for p in square.componentList:
-        if p.__class__.__name__ == 'Hammer':
-            string += "H"
-            no_hammer_there = False
-
-    no_wrench_there = True
-    for p in square.componentList:
-        if p.__class__.__name__ == 'Wrench':
-            string += "W"
-            no_wrench_there = False
-
-    if no_flag_there and no_hammer_there and no_wrench_there:
+    if no_flag_there:
         string += " "
 
     # wall "=" or nothing if 
